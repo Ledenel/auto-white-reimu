@@ -7,7 +7,7 @@ from collections import Counter
 from functools import total_ordering
 from itertools import groupby
 
-from typing import List, Callable, Optional, Tuple, Iterable, Any, Type
+from typing import List, Callable, Optional, Tuple, Iterable, Any, Type, Iterator
 
 
 @total_ordering
@@ -107,7 +107,7 @@ class TileSet(Counter):
                 return False
         return True
 
-    def _gen_str_iter(self):
+    def _gen_str_iter(self) -> Iterator[str]:
         for key, group in groupby(self.items(), key=lambda tup: tup[0].color):
             for tile, num in group:
                 yield str(tile.number) * num
@@ -180,7 +180,7 @@ class WinPattern(metaclass=ABCMeta):
 
         return False
 
-    def win_selections(self, hand: TileSet) -> Iterable[List[TileSet]]:
+    def win_selections(self, hand: TileSet) -> Iterator[List[TileSet]]:
         if self.has_win():
             yield []
         for tile in list(hand.keys()):
@@ -191,7 +191,7 @@ class WinPattern(metaclass=ABCMeta):
                         yield from ([unit] + tail for tail in next_state.win_selections(hand - unit))
             del hand[tile]
 
-    def unique_win_selections(self, hand: TileSet) -> Iterable[List[TileSet]]:
+    def unique_win_selections(self, hand: TileSet) -> Iterator[List[TileSet]]:
         return distinct((sorted(selection) for selection in self.win_selections(hand)))
 
     @abstractmethod
