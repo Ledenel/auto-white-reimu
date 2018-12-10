@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import bisect
 import re
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-from typing import List, Callable, Optional, Tuple, Iterable
+from functools import total_ordering
+from itertools import groupby
+
+from typing import List, Callable, Optional, Tuple, Iterable, Any, Type
 
 
+@total_ordering
 class Tile:
     SUIT = set("mps")
     HONOR = set("z")
@@ -21,13 +26,27 @@ class Tile:
     def __eq__(self, other: Tile):
         return self._tuple_view == other._tuple_view
 
+    def __ne__(self, other: Tile):
+        return self._tuple_view != other._tuple_view
+
+    def __lt__(self, other: Tile):
+        return self._tuple_view < other._tuple_view
+
     def __init__(self, number: int, color: str):
         self._number = number
         self._color = color
-        self._tuple_view = (number, color)
+        self._tuple_view = (color, number)
 
     def is_suit(self):
         return self._color in Tile.SUIT
+
+    @property
+    def color(self):
+        return self._color
+
+    @property
+    def number(self):
+        return self._number
 
     def next(self) -> Tile:
         if self.is_suit() and self._number < Tile.SUIT_MAX:
@@ -50,6 +69,12 @@ class Tile:
     def pair(self) -> TileSet:
         return self.repeat(Tile.PAIR_LENGTH)
 
+    def __str__(self) -> str:
+        return str(self._number) + str(self._color)
+
+    def __repr__(self) -> str:
+        return '<%s>' % self
+
 
 def tile_pair(tile: Tile) -> TileSet:
     return tile.pair()
@@ -63,12 +88,51 @@ def tile_flush(tile: Tile) -> TileSet:
     return tile.flush()
 
 
+@total_ordering
 class TileSet(Counter):
+    def re_sort(self):
+        re_sorted = sorted(self.items())
+        # print('resorted:', re_sorted)
+        self.clear()
+        for k, v in re_sorted:
+            self[k] = v
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.re_sort()
+
     def contains(self, tiles: TileSet):
         for tile, count in tiles.items():
             if self[tile] < count:
                 return False
         return True
+
+    def _gen_str_iter(self):
+        for key, group in groupby(self.items(), key=lambda tup: tup[0].color):
+            for tile, num in group:
+                yield str(tile.number) * num
+            yield key
+
+    def __str__(self):
+        return ''.join(self._gen_str_iter())
+
+    def __repr__(self):
+        return "%s" % self
+
+    def __lt__(self, other: TileSet):
+        return list(self.items()) < list(other.items())
+
+    def __add__(self, other):
+        return TileSet(super().__add__(other))
+
+    def __sub__(self, other):
+        return TileSet(super().__sub__(other))
+
+    def __and__(self, other):
+        return TileSet(super().__and__(other))
+
+    def __or__(self, other):
+        return TileSet(super().__or__(other))
 
 
 _tile_group_regex = re.compile(r"[0-9]+[%s]" % (''.join(Tile.SUIT | Tile.HONOR)))
@@ -83,6 +147,15 @@ def tiles_from_string(token: str) -> Iterable[Tile]:
         group_value = group.group(0)
         numbers, color = group_value[:-1], group_value[-1]
         yield from (Tile(int(number), color) for number in numbers)
+
+
+def distinct(iterable: Iterable):
+    unique = []
+    for item in iterable:
+        index = bisect.bisect_left(unique, item)
+        if index >= len(unique) or unique[index] != item:
+            yield item
+            unique.insert(index, item)
 
 
 class WinPattern(metaclass=ABCMeta):
@@ -108,8 +181,18 @@ class WinPattern(metaclass=ABCMeta):
         return False
 
     def win_selections(self, hand: TileSet) -> Iterable[List[TileSet]]:
-        for tile in hand:
-            pass
+        if self.has_win():
+            yield []
+        for tile in list(hand.keys()):
+            states = self.next_states(tile)
+            if states is not None:
+                for unit, next_state in states:
+                    if hand.contains(unit):
+                        yield from ([unit] + tail for tail in next_state.win_selections(hand - unit))
+            del hand[tile]
+
+    def unique_win_selections(self, hand: TileSet) -> Iterable[List[TileSet]]:
+        return distinct((sorted(selection) for selection in self.win_selections(hand)))
 
     @abstractmethod
     def next_win_state(self, piece: TileSet, pick_func: Callable[[Tile], Optional[TileSet]]) -> Optional[WinPattern]:
