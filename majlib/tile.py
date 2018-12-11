@@ -20,6 +20,26 @@ class Tile:
     TRIPLET_LENGTH = 3
     PAIR_LENGTH = 2
 
+    _TILE_POOL = {}
+
+    def __new__(cls, number: int, color: str):
+        tile_tup = (color, number)
+        if tile_tup in Tile._TILE_POOL:
+            return Tile._TILE_POOL[tile_tup]
+        else:
+            tile_obj = object.__new__(cls)
+            Tile._TILE_POOL[tile_tup] = tile_obj
+            self = tile_obj
+            self._number = number
+            self._color = color
+            self._tuple_view = (color, number)
+            self._flush = TileSet(
+                (Tile(self._number + i, self._color) for i in range(Tile.FLUSH_LENGTH))
+            ) if self.is_suit() and self._number <= Tile.SUIT_MAX - Tile.FLUSH_LENGTH + 1 else None
+            self._triplet = self.repeat(Tile.TRIPLET_LENGTH)
+            self._pair = self.repeat(Tile.PAIR_LENGTH)
+            return tile_obj
+
     def __hash__(self):
         return hash(self._tuple_view)
 
@@ -33,9 +53,7 @@ class Tile:
         return self._tuple_view < other._tuple_view
 
     def __init__(self, number: int, color: str):
-        self._number = number
-        self._color = color
-        self._tuple_view = (color, number)
+        pass
 
     def is_suit(self):
         return self._color in Tile.SUIT
@@ -53,10 +71,11 @@ class Tile:
             return Tile(self._number + 1, self._color)
 
     def flush(self) -> Optional[TileSet]:
-        if self.is_suit() and self._number <= Tile.SUIT_MAX - Tile.FLUSH_LENGTH + 1:
-            return TileSet(
-                (Tile(self._number + i, self._color) for i in range(Tile.FLUSH_LENGTH))
-            )
+        # if self.is_suit() and self._number <= Tile.SUIT_MAX - Tile.FLUSH_LENGTH + 1:
+        #     return TileSet(
+        #         (Tile(self._number + i, self._color) for i in range(Tile.FLUSH_LENGTH))
+        #     )
+        return self._flush
 
     def repeat(self, count: int) -> TileSet:
         return TileSet(
@@ -64,10 +83,12 @@ class Tile:
         )
 
     def triplet(self) -> TileSet:
-        return self.repeat(Tile.TRIPLET_LENGTH)
+        # return self.repeat(Tile.TRIPLET_LENGTH)
+        return self._triplet
 
     def pair(self) -> TileSet:
-        return self.repeat(Tile.PAIR_LENGTH)
+        # return self.repeat(Tile.PAIR_LENGTH)
+        return self._pair
 
     def __str__(self) -> str:
         return str(self._number) + str(self._color)
