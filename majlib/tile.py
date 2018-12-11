@@ -122,16 +122,16 @@ class TileSet(Counter):
     def __lt__(self, other: TileSet):
         return list(self.items()) < list(other.items())
 
-    def __add__(self, other):
+    def __add__(self, other) -> TileSet:
         return TileSet(super().__add__(other))
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> TileSet:
         return TileSet(super().__sub__(other))
 
-    def __and__(self, other):
+    def __and__(self, other) -> TileSet:
         return TileSet(super().__and__(other))
 
-    def __or__(self, other):
+    def __or__(self, other) -> TileSet:
         return TileSet(super().__or__(other))
 
 
@@ -164,20 +164,8 @@ class WinPattern(metaclass=ABCMeta):
         self._tile_unit_selections: List[Callable[[Tile], Optional[TileSet]]] = []
 
     def match(self, hand: TileSet) -> bool:
-        if self.has_win():
+        for _ in self.win_selections(hand):
             return True
-
-        for tile in hand:
-            for tile_unit_picker in self._tile_unit_selections:
-                tile_unit = tile_unit_picker(tile)
-                if tile_unit and hand.contains(tile_unit):
-                    next_win = self.next_win_state(tile_unit, tile_unit_picker)
-                    if next_win:
-                        if next_win.match(hand - tile_unit):
-                            return True
-                    else:
-                        return False
-
         return False
 
     def win_selections(self, hand: TileSet) -> Iterator[List[TileSet]]:

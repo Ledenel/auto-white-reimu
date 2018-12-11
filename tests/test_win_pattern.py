@@ -37,3 +37,8 @@ class TestWinPattern(TestCase):
         assert counting(NormalTypeWin().unique_win_selections(
             tile_set_from_string("111123456s55567p")
         )) == 1
+
+    def test_multi_win_selections(self):
+        assert counting(NormalTypeWin().unique_win_selections(
+            tile_set_from_string("111123456s55567p8p")
+        )) == 3
