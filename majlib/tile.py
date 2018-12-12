@@ -148,7 +148,9 @@ class TileSet(Counter):
         return tile_set
 
     def __sub__(self, other) -> TileSet:
-        return TileSet(super().__sub__(other))
+        target = self.copy()
+        target -= other
+        return target
 
     def __and__(self, other) -> TileSet:
         return TileSet(super().__and__(other))
