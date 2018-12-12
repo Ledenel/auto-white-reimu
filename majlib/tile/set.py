@@ -40,9 +40,12 @@ class TileSet(Counter):
         return list(self.items()) < list(other.items())
 
     def __add__(self, other) -> TileSet:
-        tile_set = TileSet(super().__add__(other))
-        tile_set.re_sort()
-        return tile_set
+        # tile_set = TileSet(super().__add__(other))
+        # tile_set.re_sort()
+        target = self.copy()
+        target += other
+        target.re_sort()
+        return target
 
     def __sub__(self, other) -> TileSet:
         target = self.copy()

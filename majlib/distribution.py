@@ -5,8 +5,8 @@ from abc import abstractmethod
 from collections import Iterator, Counter
 from numbers import Number
 
-from tile import Tile
 from tile.set import TileSet
+from tile.tile import Tile
 from tile.utils import tile_set_from_string
 
 

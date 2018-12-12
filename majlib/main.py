@@ -33,7 +33,6 @@ if __name__ == '__main__':
     start = perf_counter()
     task_start_time = start
 
-
     for i in range(try_count):
         sample_wall = Counter(remain_tile_distribution.sample(remain_draw_count))
 
