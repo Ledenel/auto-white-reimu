@@ -2,7 +2,9 @@ from collections import Counter
 from time import perf_counter
 
 from distribution import TileDistribution, StaticWall
-from tile import tile_set_from_string, TileSet, NormalTypeWin
+from pattern.win import NormalTypeWin
+from tile.set import TileSet
+from tile.utils import tile_set_from_string
 
 if __name__ == '__main__':
     input_hand = tile_set_from_string(input('Input hand:'))

@@ -1,7 +1,8 @@
 from collections import Iterable
 from unittest import TestCase
 
-from tile import tile_set_from_string, NormalTypeWin
+from tile.utils import tile_set_from_string
+from pattern.win import NormalTypeWin
 
 
 def counting(iterable: Iterable) -> int:
