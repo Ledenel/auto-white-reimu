@@ -120,7 +120,6 @@ class TileSet(Counter):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.re_sort()
 
     def contains(self, tiles: TileSet):
         for tile, count in tiles.items():
@@ -144,7 +143,9 @@ class TileSet(Counter):
         return list(self.items()) < list(other.items())
 
     def __add__(self, other) -> TileSet:
-        return TileSet(super().__add__(other))
+        tile_set = TileSet(super().__add__(other))
+        tile_set.re_sort()
+        return tile_set
 
     def __sub__(self, other) -> TileSet:
         return TileSet(super().__sub__(other))
@@ -160,7 +161,9 @@ _tile_group_regex = re.compile(r"[0-9]+[%s]" % (''.join(Tile.SUIT | Tile.HONOR))
 
 
 def tile_set_from_string(token: str) -> TileSet:
-    return TileSet(tiles_from_string(token))
+    tile_set = TileSet(tiles_from_string(token))
+    tile_set.re_sort()
+    return tile_set
 
 
 def tiles_from_string(token: str) -> Iterable[Tile]:
