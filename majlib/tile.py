@@ -10,6 +10,10 @@ from itertools import groupby
 from typing import List, Callable, Optional, Tuple, Iterable, Any, Type, Iterator
 
 
+def tile_hash_num(color: str, number: int) -> int:
+    return (ord(color) - ord('a')) * 26 + number
+
+
 @total_ordering
 class Tile:
     SUIT = set("mps")
@@ -23,16 +27,17 @@ class Tile:
     _TILE_POOL = {}
 
     def __new__(cls, number: int, color: str):
-        tile_tup = (color, number)
-        if tile_tup in Tile._TILE_POOL:
-            return Tile._TILE_POOL[tile_tup]
+        tile_hash = tile_hash_num(color, number)
+        if tile_hash in Tile._TILE_POOL:
+            return Tile._TILE_POOL[tile_hash]
         else:
             tile_obj = object.__new__(cls)
-            Tile._TILE_POOL[tile_tup] = tile_obj
             self = tile_obj
+            self._hash = tile_hash
             self._number = number
             self._color = color
             self._tuple_view = (color, number)
+            Tile._TILE_POOL[tile_hash] = tile_obj
             self._flush = TileSet(
                 (Tile(self._number + i, self._color) for i in range(Tile.FLUSH_LENGTH))
             ) if self.is_suit() and self._number <= Tile.SUIT_MAX - Tile.FLUSH_LENGTH + 1 else None
@@ -41,7 +46,7 @@ class Tile:
             return tile_obj
 
     def __hash__(self):
-        return hash(self._tuple_view)
+        return self._hash
 
     def __eq__(self, other: Tile):
         return self._tuple_view == other._tuple_view
