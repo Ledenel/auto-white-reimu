@@ -2,8 +2,8 @@ import bisect
 import re
 from typing import Iterable
 
-from tile.set import TileSet
-from tile.tile import Tile
+from container.set import TileSet
+from tile.definition import Tile
 
 _tile_group_regex = re.compile(r"[0-9]+[%s]" % (''.join(Tile.SUIT | Tile.HONOR)))
 

@@ -4,7 +4,7 @@ from functools import total_ordering
 
 from typing import Optional
 
-from tile.set import TileSet
+from container.set import TileSet
 
 
 def tile_hash_num(color: str, number: int) -> int:

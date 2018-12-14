@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from typing import List, Callable, Optional, Iterator, Iterable, Tuple
+from typing import List, Optional, Iterator, Iterable, Tuple
 
-from tile.tile import Tile
-from tile.set import TileSet
-from tile.utils import distinct
+from tile.definition import Tile
+from container.set import TileSet
+from container.utils import distinct
 
 
 class WinPattern(metaclass=ABCMeta):
