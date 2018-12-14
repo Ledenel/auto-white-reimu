@@ -2,7 +2,7 @@ from collections import Counter
 from time import perf_counter
 
 from container.distribution import TileDistribution, StaticWall
-from container.pattern import NormalTypeWin
+from container.pattern.win import NormalTypeWin
 from container.set import TileSet
 from container.utils import tile_set_from_string
 
