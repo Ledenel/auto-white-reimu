@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='majlib',
+    name='auto_white_reimu',
     version='0.1',
     packages=find_packages(),
     url='',

@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     remain_tile_distribution = StaticWall(remain_tiles)
 
-    possible_discard = {tile: input_hand - Counter([tile]) for tile in input_hand}
+    possible_discard = {tile: input_hand - TileSet([tile]) for tile in input_hand}
 
     remain_draw_count = int(input('Remain times for drawing tiles:'))
 
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     task_start_time = start
 
     for i in range(try_count):
-        sample_wall = Counter(remain_tile_distribution.sample(remain_draw_count))
+        sample_wall = TileSet(remain_tile_distribution.sample(remain_draw_count))
 
         for tile, hand in possible_discard.items():
             total_hand = hand + sample_wall
