@@ -30,6 +30,12 @@ class TileSet(Counter):
                 yield str(tile.number) * num
             yield key
 
+    def exclude(self, other):
+        if self.contains(other):
+            return self - other
+        else:
+            return None
+
     def __str__(self):
         return ''.join(self._gen_str_iter())
 

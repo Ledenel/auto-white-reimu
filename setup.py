@@ -9,6 +9,9 @@ setup(
     author='Ledenel',
     author_email='ledenelintelli@gmail.com',
     description='',
+    install_requires=[
+        'numpy',
+    ],
     setup_requires=[
         "pytest-runner"
     ],

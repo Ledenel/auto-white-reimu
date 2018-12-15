@@ -6,9 +6,16 @@ from typing import Optional
 
 from container.set import TileSet
 
+_suit_ordering = {
+    'm': 0,
+    'p': 1,
+    's': 2,
+    'z': 3,
+}
+
 
 def tile_hash_num(color: str, number: int) -> int:
-    return (ord(color) - ord('a')) * 26 + number
+    return _suit_ordering[color] * 10 + number
 
 
 @total_ordering
@@ -109,5 +116,3 @@ def tile_triplet(tile: Tile) -> TileSet:
 
 def tile_flush(tile: Tile) -> TileSet:
     return tile.flush()
-
-

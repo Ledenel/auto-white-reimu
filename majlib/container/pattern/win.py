@@ -22,8 +22,9 @@ class WinPattern(metaclass=ABCMeta):
             states = self.next_states(tile)
             if states is not None:
                 for unit, next_state in states:
-                    if hand.contains(unit):
-                        yield from ([unit] + tail for tail in next_state.win_selections(hand - unit))
+                    excluded = hand.exclude(unit)
+                    if excluded is not None:
+                        yield from ([unit] + tail for tail in next_state.win_selections(excluded))
             del hand[tile]
 
     def unique_win_selections(self, hand: TileSet) -> Iterator[List[TileSet]]:
