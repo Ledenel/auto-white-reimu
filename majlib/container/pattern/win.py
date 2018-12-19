@@ -22,17 +22,20 @@ class WinPattern(metaclass=ABCMeta):
             return
         hand = hand.copy()
 
-        # possible_units = TileSet()
-        #
-        # for tile in list(hand.keys()):
-        #     states = self.next_states(tile)
-        #     if states is not None:
-        #         for unit, next_state in states:
-        #             if hand.contains(unit):
-        #                 possible_units.update(unit)
-        #
-        # possible_units &= hand
-        # hand = possible_units
+        possible_units = TileSet()
+
+        for tile in list(hand.keys()):
+            states = self.next_states(tile)
+            if states is not None:
+                for unit, next_state in states:
+                    if hand.contains(unit):
+                        possible_units.update(unit)
+
+        possible_units &= hand
+        hand = possible_units
+
+        if self.need_count() > sum(hand.values()):
+            return
 
         for tile in list(hand.keys()):
             states = self.next_states(tile)
