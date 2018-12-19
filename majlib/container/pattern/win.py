@@ -18,6 +18,22 @@ class WinPattern(metaclass=ABCMeta):
     def win_selections(self, hand: TileSet) -> Iterator[List[TileSet]]:
         if self.has_win():
             yield []
+        if self.need_count() > sum(hand.values()):
+            return
+        hand = hand.copy()
+
+        # possible_units = TileSet()
+        #
+        # for tile in list(hand.keys()):
+        #     states = self.next_states(tile)
+        #     if states is not None:
+        #         for unit, next_state in states:
+        #             if hand.contains(unit):
+        #                 possible_units.update(unit)
+        #
+        # possible_units &= hand
+        # hand = possible_units
+
         for tile in list(hand.keys()):
             states = self.next_states(tile)
             if states is not None:
@@ -36,6 +52,10 @@ class WinPattern(metaclass=ABCMeta):
 
     @abstractmethod
     def next_states(self, tile: Tile) -> Optional[Iterable[Tuple[TileSet, WinPattern]]]:
+        pass
+
+    @abstractmethod
+    def need_count(self) -> int:
         pass
 
 
@@ -58,3 +78,6 @@ class NormalTypeWin(WinPattern):
             if flush:
                 yield (flush, meld_next)
             yield (tile.triplet(), meld_next)
+
+    def need_count(self) -> int:
+        return self._pairs * 2 + self._melds * 3

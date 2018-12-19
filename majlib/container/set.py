@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.__init__ import Counter
+from collections import Counter
 from functools import total_ordering
 from itertools import groupby
 from typing import Iterator
