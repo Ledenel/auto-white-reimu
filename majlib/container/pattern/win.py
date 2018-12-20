@@ -24,12 +24,7 @@ class WinPattern(metaclass=ABCMeta):
 
         possible_units = TileSet()
 
-        for tile in list(hand.keys()):
-            states = self.next_states(tile)
-            if states is not None:
-                for unit, next_state in states:
-                    if hand.contains(unit):
-                        possible_units.update(unit)
+        unit_list = list(self.update_possible_units(hand, possible_units))
 
         possible_units &= hand
         hand = possible_units
@@ -37,14 +32,30 @@ class WinPattern(metaclass=ABCMeta):
         if self.need_count() > sum(hand.values()):
             return
 
+        for tile, unit_tuples in unit_list:
+            for unit, next_state in unit_tuples:
+                yield from ([unit] + tail for tail in next_state.win_selections(hand - unit))
+            del hand[tile]
+
+        # for tile in list(hand.keys()):
+        #     states = self.next_states(tile)
+        #     if states is not None:
+        #         for unit, next_state in states:
+        #             excluded = hand.exclude(unit)
+        #             if excluded is not None:
+        #                 yield from ([unit] + tail for tail in next_state.win_selections(excluded))
+        #     del hand[tile]
+
+    def update_possible_units(self, hand, possible_units):
         for tile in list(hand.keys()):
             states = self.next_states(tile)
+            states_list = []
             if states is not None:
                 for unit, next_state in states:
-                    excluded = hand.exclude(unit)
-                    if excluded is not None:
-                        yield from ([unit] + tail for tail in next_state.win_selections(excluded))
-            del hand[tile]
+                    if hand.contains(unit):
+                        possible_units.update(unit)
+                        states_list.append((unit, next_state))
+            yield tile, states_list
 
     def unique_win_selections(self, hand: TileSet) -> Iterator[List[TileSet]]:
         return distinct((sorted(selection) for selection in self.win_selections(hand)))
