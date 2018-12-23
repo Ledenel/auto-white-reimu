@@ -72,14 +72,20 @@ if __name__ == '__main__':
 
     condition_matrix = np.full((solution_count, solution_count), min_rate, dtype=np.double)
 
-    for transfer_index, transfer_tile in enumerate(solution_tiles):
-        for condition_index, condition_tile in enumerate(solution_tiles):
+    for condition_index, condition_tile in enumerate(solution_tiles):
+        # self_transfer_rate = win_counter[condition_tile] / try_count
+        self_transfer_rate = 0
+        for transfer_index, transfer_tile in enumerate(solution_tiles):
             transfer_count = condition_win_counter[condition_tile][transfer_tile]
-            condition_count = win_counter[condition_tile]
+            condition_count = win_counter[transfer_tile]
             if transfer_count > 0 and condition_count > 0:
-                condition_matrix[transfer_index][condition_index] = transfer_count / condition_count
+                condition_matrix[transfer_index][condition_index] = transfer_count
+        condition_matrix[:, condition_index] *= ((1-self_transfer_rate) / sum(condition_matrix[:, condition_index]))
+        condition_matrix[condition_index][condition_index] = self_transfer_rate
 
-    # FIXME: add regularization of Markov possibilities matrix (row sum equals 1).
+
+
+    # FIXME: add regularization of Markov possibilities matrix (column sum equals 1).
 
     # FIXME: define proper self retain possibilities.
 
