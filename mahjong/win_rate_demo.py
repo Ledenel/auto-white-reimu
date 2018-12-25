@@ -33,6 +33,8 @@ if __name__ == '__main__':
 
     win_patterns = [normal_win, seven_pair]
 
+    total_win_count = 0
+
     elapsed_time = 0
 
     start = perf_counter()
@@ -48,11 +50,12 @@ if __name__ == '__main__':
             for win_pattern in win_patterns:
                 if win_pattern.match(total_hand):
                     win_counter.update([tile])
+                    total_win_count += 1
                     possible_win_set.add(tile)
                     break
 
-        for possible_win_tile in possible_win_set:
-            condition_win_counter[possible_win_tile].update((possible_win_set - {possible_win_tile}))
+        for no_win_tile in set(possible_discard.keys()) - possible_win_set:
+            condition_win_counter[no_win_tile].update(possible_win_set)
 
         interval = perf_counter() - start
         if interval > 1:
@@ -73,8 +76,8 @@ if __name__ == '__main__':
     condition_matrix = np.full((solution_count, solution_count), min_rate, dtype=np.double)
 
     for condition_index, condition_tile in enumerate(solution_tiles):
-        # self_transfer_rate = win_counter[condition_tile] / try_count
-        self_transfer_rate = 0
+        self_transfer_rate = win_counter[condition_tile] / total_win_count
+        # self_transfer_rate = 0
         for transfer_index, transfer_tile in enumerate(solution_tiles):
             transfer_count = condition_win_counter[condition_tile][transfer_tile]
             condition_count = win_counter[transfer_tile]
@@ -110,10 +113,12 @@ if __name__ == '__main__':
     pick_rank_map = {tile: (rough, infinite) for tile, rough, infinite in
                      zip(solution_tiles, rough_pick, infinite_pick)}
 
-    results = sorted(win_counter.items(), key=lambda tup: tup[1], reverse=True)
+    # results = sorted(win_counter.items(), key=lambda tup: tup[1], reverse=True)
+    results = sorted(pick_rank_map.items(), key=lambda tup: tup[1][1], reverse=True)
     print("for input hand <%s>, remain %d draws:" % (input_hand, remain_draw_count))
-    for tile, win_count in results:
-        rough, infinite = pick_rank_map[tile]
+    for tile, (rough, infinite) in results:
+        # rough, infinite = pick_rank_map[tile]
+        win_count = win_counter[tile]
         print("discard %s: %.2f%% win rate (%d/%d), %.2f%% rough pick rate, %.2f%% accurate pick rate" %
               (tile,
                win_count * 100 / try_count,
