@@ -31,7 +31,9 @@ if __name__ == '__main__':
 
     seven_pair = NormalTypeWin(melds=0, pairs=7)
 
-    win_patterns = [normal_win, seven_pair]
+    win_patterns = [normal_win]  # , seven_pair]
+
+    avg_win_counter = Counter()
 
     total_win_count = 0
 
@@ -54,8 +56,12 @@ if __name__ == '__main__':
                     possible_win_set.add(tile)
                     break
 
+        for tile in possible_win_set:
+            avg_win_counter[tile] += 1 / len(possible_win_set)
+
         for no_win_tile in set(possible_discard.keys()) - possible_win_set:
-            condition_win_counter[no_win_tile].update(possible_win_set)
+            for tile in possible_win_set:
+                condition_win_counter[no_win_tile][tile] += 1 / len(possible_win_set)
 
         interval = perf_counter() - start
         if interval > 1:
@@ -76,17 +82,15 @@ if __name__ == '__main__':
     condition_matrix = np.full((solution_count, solution_count), min_rate, dtype=np.double)
 
     for condition_index, condition_tile in enumerate(solution_tiles):
-        self_transfer_rate = win_counter[condition_tile] / total_win_count
+        self_transfer_rate = avg_win_counter[condition_tile] / total_win_count
         # self_transfer_rate = 0
         for transfer_index, transfer_tile in enumerate(solution_tiles):
             transfer_count = condition_win_counter[condition_tile][transfer_tile]
             condition_count = win_counter[transfer_tile]
             if transfer_count > 0 and condition_count > 0:
                 condition_matrix[transfer_index][condition_index] = transfer_count
-        condition_matrix[:, condition_index] *= ((1-self_transfer_rate) / sum(condition_matrix[:, condition_index]))
+        condition_matrix[:, condition_index] *= ((1 - self_transfer_rate) / sum(condition_matrix[:, condition_index]))
         condition_matrix[condition_index][condition_index] = self_transfer_rate
-
-
 
     # FIXME: add regularization of Markov possibilities matrix (column sum equals 1).
 
