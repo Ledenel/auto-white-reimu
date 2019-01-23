@@ -1,4 +1,8 @@
+from __future__ import annotations
+
+import re
 import xml.etree.ElementTree as ET
+from abc import abstractmethod, ABCMeta
 from argparse import Namespace
 from functools import reduce
 from itertools import groupby
@@ -36,6 +40,73 @@ def number_list(int_string: str, split=','):
             for x in int_string.split(split)]
 
 
+class GameState(metaclass=ABCMeta):
+    @abstractmethod
+    def scan(self, event) -> GameState:
+        pass
+
+    @property
+    @abstractmethod
+    def is_key_event(self):
+        pass
+
+    def with_events(self, events):
+        initial_state = self
+        for event in events:
+            initial_state = initial_state.scan(event)
+            yield initial_state
+
+    def with_key_events(self, events):
+        initial_state = self
+        for event in events:
+            if self.is_key_event(event):
+                initial_state = initial_state.scan(event)
+                yield initial_state
+
+
+class GameStateCollection(GameState):
+    @property
+    def is_key_event(self):
+        return self._composed_key_event_func
+
+    def __init__(self, **states):
+        super().__init__()
+        self._states = states
+        self._name_space_state = Namespace(**states)
+
+        def is_composed_key_event(event):
+            return all(st.is_key_event(event) for st in states.values())
+
+        self._composed_key_event_func = is_composed_key_event
+
+    @property
+    def states(self):
+        return self._name_space_state
+
+    def scan(self, event) -> GameState:
+        return GameStateCollection(
+            **{k: v.scan(event) for k, v in self._states.items()}
+        )
+
+
+class PlayerHand(GameState):
+    def __init__(self, player: TenhouPlayer):
+        super().__init__()
+        self._player = player
+
+        def hand_is_key_event(event):
+            return player.is_discard(event) or player.is_draw(event) or player.is_open_hand(event)
+
+        self._key_event_func = hand_is_key_event
+
+    def scan(self, event) -> GameState:
+        pass  # TODO add open hand message 'N' decode method.
+
+    @property
+    def is_key_event(self):
+        return self._key_event_func
+
+
 class TenhouPlayer:
     def __init__(self, index, name_encoded, level, rate, sex):
         self.sex = sex
@@ -47,11 +118,16 @@ class TenhouPlayer:
     def clear(self):
         pass
 
-    def draw(self, tile_index):
-        pass
+    def is_draw(self, event):
+        regex = DRAW_REGEX[self.index]
+        return regex.match(event.tag)
 
-    def discard(self, tile_index):
-        pass
+    def is_discard(self, event):
+        regex = DISCARD_REGEX[self.index]
+        return regex.match(event.tag)
+
+    def is_open_hand(self, event):
+        return event.tag == "N" and int(event.attrib["who"]) == self.index
 
     def reach(self):
         pass
@@ -124,6 +200,9 @@ RANKS = [
 DRAW_INDICATOR = ['T', 'U', 'V', 'W']
 DISCARD_INDICATOR = ['D', 'E', 'F', 'G']
 
+DRAW_REGEX = [re.compile(r"^%s([0-9]+)" % draw) for draw in DRAW_INDICATOR]
+DISCARD_REGEX = [re.compile(r"^%s([0-9]+)" % draw) for draw in DISCARD_INDICATOR]
+
 
 class TenhouRecord:
     def __init__(self, events):
@@ -165,5 +244,3 @@ def from_url(url: str) -> TenhouRecord:
 
 def from_file(file) -> TenhouRecord:
     return TenhouRecord(ET.parse(file))
-
-

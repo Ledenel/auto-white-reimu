@@ -11,6 +11,7 @@ setup(
     description='',
     install_requires=[
         'numpy',
+        'bitstruct',
     ],
     setup_requires=[
         "pytest-runner"
