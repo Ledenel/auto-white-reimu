@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import re
+import urllib
 import xml.etree.ElementTree as ET
 from abc import abstractmethod, ABCMeta
 from argparse import Namespace
 from functools import reduce
 from itertools import groupby
+from urllib.error import HTTPError
 from urllib.parse import urlparse, parse_qs, unquote
 from urllib.request import urlopen
 
 from tile.definition import Tile
+
+import requests
 
 API_URL_TEMPLATE = 'http://e.mjv.jp/0/log/?{0}'
 
@@ -17,8 +21,7 @@ API_URL_TEMPLATE = 'http://e.mjv.jp/0/log/?{0}'
 def fetch_record_content(url):
     log_id = parse_qs(urlparse(url).query)['log'][0]
     url = API_URL_TEMPLATE.format(log_id)
-    with urlopen(url) as f:
-        return f.read()
+    return requests.get(url).text
 
 
 SUIT_ORDER = 'mpsz'

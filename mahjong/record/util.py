@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
+from functools import reduce
 
 import bitstruct
 
@@ -58,6 +59,42 @@ type8:u8
 """
 
 
+class SubCategory:
+    def __init__(self, *total_num_of_each_category) -> None:
+        super().__init__()
+        self._totals = list(total_num_of_each_category)
+        assert all(x > 0 for x in self._totals[1:])
+        head = self._totals[0]
+        assert head == -1 or head > 0
+        self._totals.reverse()
+        if head != -1:
+            self._max = reduce(lambda x, y: x * y, self._totals)
+        else:
+            self._max = None
+
+    def _category_iter(self, index):
+        assert not self._max or index < self._max
+        for total in self._totals:
+            if total != -1:
+                yield index % total
+                index //= total
+            else:
+                yield index
+
+    def category(self, index):
+        cat_list = list(self._category_iter(index))
+        cat_list.reverse()
+        return tuple(cat_list)
+
+    def index(self, category_tuple):
+        assert len(category_tuple) == len(self._totals)
+        index = category_tuple[0]
+        for idx, total in zip(category_tuple[1:], self._totals[::-1][1:]):
+            index *= total
+            index += idx
+        return index
+
+
 def bit_struct_from_desc(desc_str):
     reverse_order = desc_str.strip().split()
     reverse_order.reverse()
@@ -68,6 +105,13 @@ def named_tuple_from_desc(type_name, desc_str):
     reverse_order = desc_str.strip().split()
     reverse_order.reverse()
     return namedtuple(type_name, [line.split(":")[0] for line in reverse_order])
+
+
+FROM_MAP = [0, 1, 2, 3]
+
+
+def unpack_with(data_class, unpacker, value):
+    return data_class(*unpacker.unpack(struct.pack(">H", int(value))))
 
 
 class Meld(metaclass=ABCMeta):
@@ -81,23 +125,47 @@ class Meld(metaclass=ABCMeta):
     def unpacker(self):
         pass
 
+    @property
+    def data(self):
+        return self._data
+
+    @property
+    @abstractmethod
+    def self_tiles(self):
+        pass
+
+    @property
+    @abstractmethod
+    def borrowed_tiles(self):
+        pass
+
+    @property
+    def from_who(self):
+        return (self.who_index + FROM_MAP[self.data.kui]) % 4
+
     def unpack(self, value):
-        return self.data_class(*self.unpacker.unpack(struct.pack(">H", int(value))))
+        unpacker = self.unpacker
+        data_class = self.data_class
+        return unpack_with(data_class, unpacker, value)
+
+    def __init__(self, who_index, value) -> None:
+        super().__init__()
+        self.who_index = who_index
+        self._data = self.unpack(value)
 
 
 class Flush(Meld):
     def __init__(self, who_index, value) -> None:
-        super().__init__()
-        self.who_index = who_index
-        data: FlushData = self.unpack(value)
+        super().__init__(who_index, value)
+        data = self.data
         start_flush_kind = data.type6 // 3
         start_tile_kind = (start_flush_kind // 7) * 9 + (start_flush_kind % 7)
         start_tile = start_tile_kind * 4
         self._which_first = data.type6 % 3
         base0, base1, base2 = [start_tile + 4 * i for i in range(3)]
         self.tiles = [base0 + data.hai0, base1 + data.hai1, base2 + data.hai2]
-        self._self_tiles = [x for i, x in enumerate(self.tiles) if i != self._which_first]
-        self._borrowed_tiles = self.tiles[self._which_first]
+        self._self_tiles = set([x for i, x in enumerate(self.tiles) if i != self._which_first])
+        self._borrowed_tiles = {self.tiles[self._which_first]}
 
     @property
     def self_tiles(self):
@@ -108,16 +176,34 @@ class Flush(Meld):
         return self._borrowed_tiles
 
     @property
-    def from_who(self):
-        return (self.who_index - 1) % 4
-
-    @property
     def data_class(self):
         return FlushData
 
     @property
     def unpacker(self):
         return flush_packer
+
+
+class Triplet(Meld):
+
+    @property
+    def data_class(self):
+        return TripletData
+
+    def __init__(self, who_index, value) -> None:
+        super().__init__(who_index, value)
+
+    @property
+    def unpacker(self):
+        return triplet_packer
+
+    @property
+    def self_tiles(self):
+        pass
+
+    @property
+    def borrowed_tiles(self):
+        pass
 
 
 FlushData = named_tuple_from_desc("flush_data", flush_desc)
@@ -134,3 +220,21 @@ added_kan_packer = bit_struct_from_desc(added_kan_desc)
 
 KitaData = named_tuple_from_desc("kita_data", kita_desc)
 kita_packer = bit_struct_from_desc(kita_desc)
+
+meld_type_desc = kita_desc
+meld_type_unpacker = bit_struct_from_desc(meld_type_desc)
+MeldTypeData = named_tuple_from_desc("meld_type", meld_type_desc)
+
+
+def meld_type(data):
+    type_of = unpack_with(MeldTypeData, meld_type_unpacker, data)
+    if type_of.syuntsu:
+        return "flush"
+    elif type_of.koutsu:
+        return "triplet"
+    elif type_of.chakan:
+        return "add_kan"
+    elif type_of.nuki:
+        return "kita"
+    else:
+        return "kan"
