@@ -8,10 +8,11 @@ from functools import reduce
 from itertools import groupby
 from urllib.parse import urlparse, parse_qs, unquote
 
-from record.category import TENHOU_TILE_CATEGORY
-from tile.definition import Tile
-
 import requests
+
+from record.category import TENHOU_TILE_CATEGORY
+from record.util import meld_from
+from tile.definition import Tile
 
 API_URL_TEMPLATE = 'http://e.mjv.jp/0/log/?{0}'
 
@@ -49,6 +50,11 @@ class GameState(metaclass=ABCMeta):
 
     @property
     @abstractmethod
+    def value(self):
+        pass
+
+    @property
+    @abstractmethod
     def is_key_event(self):
         pass
 
@@ -82,7 +88,7 @@ class GameStateCollection(GameState):
         self._composed_key_event_func = is_composed_key_event
 
     @property
-    def states(self):
+    def value(self):
         return self._name_space_state
 
     def scan(self, event) -> GameState:
@@ -92,17 +98,33 @@ class GameStateCollection(GameState):
 
 
 class PlayerHand(GameState):
-    def __init__(self, player: TenhouPlayer):
+    @property
+    def value(self):
+        return self.hand
+
+    def __init__(self, player: TenhouPlayer, hand=None):
         super().__init__()
+        if hand is None:
+            hand = set()
         self._player = player
+        self.hand = hand
 
         def hand_is_key_event(event):
-            return player.is_discard(event) or player.is_draw(event) or player.is_open_hand(event)
+            return event.tag == "INIT" or player.is_discard(event) or player.is_draw(event) or player.is_open_hand(event)
 
         self._key_event_func = hand_is_key_event
 
     def scan(self, event) -> GameState:
-        pass  # TODO add open hand message 'N' decode method.
+        if event.tag == "INIT":
+            return PlayerHand(self._player, set(number_list(event.attrib['hai%d' % self._player.index])))
+        elif self._player.is_draw(event):
+            return PlayerHand(self._player, self.hand | {self._player.draw_tile_index(event)})
+        elif self._player.is_discard(event):
+            return PlayerHand(self._player, self.hand - {self._player.discard_tile_index(event)})
+        elif self._player.is_open_hand(event):
+            meld = meld_from(event)
+            return PlayerHand(self._player, self.hand - {meld.self_tiles})
+        raise ValueError("unexpected event for PlayerHand")
 
     @property
     def is_key_event(self):
@@ -124,9 +146,17 @@ class TenhouPlayer:
         regex = DRAW_REGEX[self.index]
         return regex.match(event.tag)
 
+    def draw_tile_index(self, draw_event):
+        regex = DRAW_REGEX[self.index]
+        return int(regex.match(draw_event.tag).group(1))
+
     def is_discard(self, event):
         regex = DISCARD_REGEX[self.index]
         return regex.match(event.tag)
+
+    def discard_tile_index(self, discard_event):
+        regex = DISCARD_REGEX[self.index]
+        return int(regex.match(discard_event.tag).group(1))
 
     def is_open_hand(self, event):
         return event.tag == "N" and int(event.attrib["who"]) == self.index
@@ -155,7 +185,7 @@ class TenhouGame:
         init, *playing = game_events
         self._meta = list_of_xml_configs([init])
         self._end_meta = list_of_xml_configs([game_events[-1]])
-        self._events = game_events
+        self.events = game_events
         self.playing = playing
 
 
@@ -212,7 +242,7 @@ class TenhouRecord:
     def __init__(self, events):
         player_mode = 4
 
-        self._events = events
+        self.events = events
         grouped = [(condition, list(group))
                    for condition, group in
                    groupby(events, lambda x: x.tag == "INIT")]

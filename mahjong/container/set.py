@@ -37,6 +37,7 @@ class TileSet(Counter):
             return None
 
     def __str__(self):
+        self.re_sort()
         return ''.join(self._gen_str_iter())
 
     def __repr__(self):
