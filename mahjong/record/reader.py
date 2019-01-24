@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 import re
-import urllib
 import xml.etree.ElementTree as ET
 from abc import abstractmethod, ABCMeta
 from argparse import Namespace
 from functools import reduce
 from itertools import groupby
-from urllib.error import HTTPError
 from urllib.parse import urlparse, parse_qs, unquote
-from urllib.request import urlopen
 
+from record.category import TENHOU_TILE_CATEGORY
 from tile.definition import Tile
 
 import requests
@@ -33,7 +31,8 @@ numbered first 5m,5s,5p is considered as aka dora.
 
 
 def tile_from_tenhou(index):
-    return Tile(((index % 36) // 4) + 1, SUIT_ORDER[index // 36])
+    color, number, _ = TENHOU_TILE_CATEGORY.category(index)
+    return Tile(number + 1, SUIT_ORDER[color])
 
 
 def number_list(int_string: str, split=','):

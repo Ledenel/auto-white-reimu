@@ -24,6 +24,7 @@ answers = [
     '768s'
 ]
 
+
 @pytest.mark.parametrize("data,answer", zip(basic_data, answers))
 def test_self_tiles(data, answer):
     flush = Flush(0, data)

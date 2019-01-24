@@ -1,12 +1,11 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from functools import reduce
 
 import bitstruct
 
 import struct
 
-from record.reader import TenhouPlayer
+from record.category import SubCategory, TENHOU_TILE_CATEGORY
 
 flush_desc = """
 kui:u2
@@ -57,42 +56,6 @@ nuki:b1
 padding__:u2
 type8:u8
 """
-
-
-class SubCategory:
-    def __init__(self, *total_num_of_each_category) -> None:
-        super().__init__()
-        self._totals = list(total_num_of_each_category)
-        assert all(x > 0 for x in self._totals[1:])
-        head = self._totals[0]
-        assert head == -1 or head > 0
-        self._totals.reverse()
-        if head != -1:
-            self._max = reduce(lambda x, y: x * y, self._totals)
-        else:
-            self._max = None
-
-    def _category_iter(self, index):
-        assert not self._max or index < self._max
-        for total in self._totals:
-            if total != -1:
-                yield index % total
-                index //= total
-            else:
-                yield index
-
-    def category(self, index):
-        cat_list = list(self._category_iter(index))
-        cat_list.reverse()
-        return tuple(cat_list)
-
-    def index(self, category_tuple):
-        assert len(category_tuple) == len(self._totals)
-        index = category_tuple[0]
-        for idx, total in zip(category_tuple[1:], self._totals[::-1][1:]):
-            index *= total
-            index += idx
-        return index
 
 
 def bit_struct_from_desc(desc_str):
@@ -158,14 +121,15 @@ class Flush(Meld):
     def __init__(self, who_index, value) -> None:
         super().__init__(who_index, value)
         data = self.data
-        start_flush_kind = data.type6 // 3
-        start_tile_kind = (start_flush_kind // 7) * 9 + (start_flush_kind % 7)
-        start_tile = start_tile_kind * 4
-        self._which_first = data.type6 % 3
-        base0, base1, base2 = [start_tile + 4 * i for i in range(3)]
-        self.tiles = [base0 + data.hai0, base1 + data.hai1, base2 + data.hai2]
-        self._self_tiles = set([x for i, x in enumerate(self.tiles) if i != self._which_first])
-        self._borrowed_tiles = {self.tiles[self._which_first]}
+        flush_kinds = SubCategory(3, 7, 3)
+        flush_color, flush_start_number, which_first = flush_kinds.category(data.type6)
+        hais = [data.hai0, data.hai1, data.hai2]
+        self.tiles = [
+            TENHOU_TILE_CATEGORY.index((flush_color, flush_start_number + i, hai))
+            for i, hai in enumerate(hais)
+        ]
+        self._self_tiles = set([x for i, x in enumerate(self.tiles) if i != which_first])
+        self._borrowed_tiles = {self.tiles[which_first]}
 
     @property
     def self_tiles(self):
