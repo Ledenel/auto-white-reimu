@@ -32,3 +32,9 @@ def test_self_tiles(data, answer):
     borrowed, *self_tiles = tiles
     assert {borrowed} == {tile_from_tenhou(x) for x in flush.borrowed_tiles}
     assert set(self_tiles) == {tile_from_tenhou(x) for x in flush.self_tiles}
+
+
+@pytest.mark.parametrize("data", basic_data)
+def test_flush_data_kui_3(data):
+    flush = Flush(0, data)
+    assert flush.data.kui == 3

@@ -15,7 +15,7 @@ class SubCategory:
             self._max = None
 
     def _category_iter(self, index):
-        assert not self._max or index < self._max
+        assert self._max is None or index < self._max
         for total in self._totals:
             if total != -1:
                 yield index % total

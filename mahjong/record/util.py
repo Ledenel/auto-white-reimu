@@ -77,6 +77,12 @@ def unpack_with(data_class, unpacker, value):
     return data_class(*unpacker.unpack(struct.pack(">H", int(value))))
 
 
+def init_from_basic(tiles_basic, which_first):
+    first_tile = tiles_basic[which_first]
+    self_tiles = set(tiles_basic) - first_tile
+    return {first_tile}, self_tiles
+
+
 class Meld(metaclass=ABCMeta):
     @property
     @abstractmethod
@@ -103,6 +109,10 @@ class Meld(metaclass=ABCMeta):
         pass
 
     @property
+    def borrowed_index(self):
+        return 3 - self.data.kui
+
+    @property
     def from_who(self):
         return (self.who_index + FROM_MAP[self.data.kui]) % 4
 
@@ -124,12 +134,13 @@ class Flush(Meld):
         flush_kinds = SubCategory(3, 7, 3)
         flush_color, flush_start_number, which_first = flush_kinds.category(data.type6)
         hais = [data.hai0, data.hai1, data.hai2]
-        self.tiles = [
+        tiles_basic = [
             TENHOU_TILE_CATEGORY.index((flush_color, flush_start_number + i, hai))
             for i, hai in enumerate(hais)
         ]
-        self._self_tiles = set([x for i, x in enumerate(self.tiles) if i != which_first])
-        self._borrowed_tiles = {self.tiles[which_first]}
+        borrowed_tiles, self_tiles = init_from_basic(tiles_basic, which_first)
+        self._self_tiles = self_tiles
+        self._borrowed_tiles = borrowed_tiles
 
     @property
     def self_tiles(self):
@@ -149,13 +160,24 @@ class Flush(Meld):
 
 
 class Triplet(Meld):
-
     @property
     def data_class(self):
         return TripletData
 
     def __init__(self, who_index, value) -> None:
         super().__init__(who_index, value)
+        triplet_kinds = SubCategory(34, 3)
+        triplet_color_number = SubCategory(4, 9)
+        tile_type, which_first = triplet_kinds.category(self.data.type7)
+        color, number = triplet_color_number.category(tile_type)
+        hais = sorted(list(set(range(4)) - {self.data.hai_unused}))
+        tiles_basic = [
+            TENHOU_TILE_CATEGORY.index((color, number, hai))
+            for i, hai in enumerate(hais)
+        ]
+        borrowed_tiles, self_tiles = init_from_basic(tiles_basic, which_first)
+        self._self_tiles = self_tiles
+        self._borrowed_tiles = borrowed_tiles
 
     @property
     def unpacker(self):
@@ -163,11 +185,122 @@ class Triplet(Meld):
 
     @property
     def self_tiles(self):
-        pass
+        return self._self_tiles
 
     @property
     def borrowed_tiles(self):
-        pass
+        return self._borrowed_tiles
+
+
+class Kan(Meld):
+    @property
+    def data_class(self):
+        return KanData
+
+    def __init__(self, who_index, value) -> None:
+        super().__init__(who_index, value)
+        color, number, hai_index = TENHOU_TILE_CATEGORY.category(self.data.type8)
+        hais = list(range(4))
+        tiles_basic = [
+            TENHOU_TILE_CATEGORY.index((color, number, hai))
+            for i, hai in enumerate(hais)
+        ]
+        if self.data.kui == 0:
+            self._self_tiles = set(tiles_basic)
+            self._borrowed_tiles = set()
+        else:
+            borrowed_tiles, self_tiles = init_from_basic(tiles_basic, hai_index)
+            self._self_tiles = self_tiles
+            self._borrowed_tiles = borrowed_tiles
+
+    @property
+    def unpacker(self):
+        return kan_packer
+
+    @property
+    def self_tiles(self):
+        return self._self_tiles
+
+    @property
+    def borrowed_tiles(self):
+        return self._borrowed_tiles
+
+
+class AddedKan(Meld):
+    @property
+    def data_class(self):
+        return AddedKanData
+
+    def __init__(self, who_index, value) -> None:
+        super().__init__(who_index, value)
+        triplet_kinds = SubCategory(34, 3)
+        triplet_color_number = SubCategory(4, 9)
+        tile_type, which_first = triplet_kinds.category(self.data.type7)
+        color, number = triplet_color_number.category(tile_type)
+        self._self_tiles = {TENHOU_TILE_CATEGORY.index((color, number, self.data.hai_added))}
+        self._borrowed_tiles = set()
+
+    @property
+    def unpacker(self):
+        return added_kan_packer
+
+    @property
+    def self_tiles(self):
+        return self._self_tiles
+
+    @property
+    def borrowed_tiles(self):
+        return self._borrowed_tiles
+
+
+class AddedKan(Meld):
+    @property
+    def data_class(self):
+        return AddedKanData
+
+    def __init__(self, who_index, value) -> None:
+        super().__init__(who_index, value)
+        triplet_kinds = SubCategory(34, 3)
+        triplet_color_number = SubCategory(4, 9)
+        tile_type, which_first = triplet_kinds.category(self.data.type7)
+        color, number = triplet_color_number.category(tile_type)
+        self._self_tiles = {TENHOU_TILE_CATEGORY.index((color, number, self.data.hai_added))}
+        self._borrowed_tiles = set()
+
+    @property
+    def unpacker(self):
+        return added_kan_packer
+
+    @property
+    def self_tiles(self):
+        return self._self_tiles
+
+    @property
+    def borrowed_tiles(self):
+        return self._borrowed_tiles
+
+
+class Kita(Meld):
+    @property
+    def data_class(self):
+        return AddedKanData
+
+    def __init__(self, who_index, value) -> None:
+        super().__init__(who_index, value)
+        self._self_tiles = {self.data.type8}
+        self._borrowed_tiles = set()
+
+    @property
+    def unpacker(self):
+        return added_kan_packer
+
+    @property
+    def self_tiles(self):
+        return self._self_tiles
+
+    @property
+    def borrowed_tiles(self):
+        return self._borrowed_tiles
 
 
 FlushData = named_tuple_from_desc("flush_data", flush_desc)
@@ -202,3 +335,20 @@ def meld_type(data):
         return "kita"
     else:
         return "kan"
+
+
+def meld_from(event) -> Meld:
+    who = event.attrib['who']
+    data = event.attrib['m']
+    type_of = unpack_with(MeldTypeData, meld_type_unpacker, data)
+
+    if type_of.syuntsu:
+        return Flush(who, data)
+    elif type_of.koutsu:
+        return Triplet(who, data)
+    elif type_of.chakan:
+        return AddedKan(who, data)
+    elif type_of.nuki:
+        return Kita(who, data)
+    else:
+        return Kan(who, data)
