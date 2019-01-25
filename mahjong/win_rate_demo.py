@@ -1,10 +1,10 @@
 from collections import Counter, defaultdict
 from time import perf_counter
 
-from container.distribution import TileDistribution, StaticWall
-from container.pattern.win import NormalTypeWin
-from container.set import TileSet
-from container.utils import tile_set_from_string
+from mahjong.container.distribution import TileDistribution, StaticWall
+from mahjong.container.pattern.win import NormalTypeWin
+from mahjong.container.set import TileSet
+from mahjong.container.utils import tile_set_from_string
 
 import numpy as np
 from numpy import linalg as LA

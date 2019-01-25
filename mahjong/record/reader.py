@@ -9,18 +9,23 @@ from urllib.parse import urlparse, parse_qs, unquote
 
 import requests
 
-from record.category import TENHOU_TILE_CATEGORY
-from tile.definition import Tile
+from mahjong.record.category import TENHOU_TILE_CATEGORY
+from mahjong.tile.definition import Tile
 
 API_URL_TEMPLATE = 'http://e.mjv.jp/0/log/plainfiles.cgi?{0}'
 
 
 def fetch_record_content(url):
-    log_id = parse_qs(urlparse(url).query)['log'][0]
-    url = API_URL_TEMPLATE.format(log_id)
+    url = download_url(url)
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                              'Chrome/71.0.3578.98 Safari/537.36'}
     return requests.get(url, headers=headers, allow_redirects=True).text
+
+
+def download_url(view_url):
+    log_id = parse_qs(urlparse(view_url).query)['log'][0]
+    view_url = API_URL_TEMPLATE.format(log_id)
+    return view_url
 
 
 SUIT_ORDER = 'mpsz'

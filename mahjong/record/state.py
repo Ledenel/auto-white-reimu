@@ -4,8 +4,8 @@ from abc import ABCMeta, abstractmethod
 from argparse import Namespace
 from typing import List
 
-from record.reader import TenhouPlayer, number_list, tile_from_tenhou
-from record.util import meld_from, TenhouMeld, TenhouAddedKan, Meld, Triplet, KanFromTriplet
+from mahjong.record.reader import TenhouPlayer, number_list, tile_from_tenhou
+from mahjong.record.util import meld_from, TenhouMeld, TenhouAddedKan, Meld, Triplet, KanFromTriplet
 
 
 class GameState(metaclass=ABCMeta):

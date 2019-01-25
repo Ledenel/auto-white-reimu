@@ -6,7 +6,7 @@ import bitstruct
 
 import struct
 
-from record.category import SubCategory, TENHOU_TILE_CATEGORY
+from mahjong.record.category import SubCategory, TENHOU_TILE_CATEGORY
 
 flush_desc = """
 kui:u2
