@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 import xml.etree.ElementTree as ET
-from abc import abstractmethod, ABCMeta
 from argparse import Namespace
 from functools import reduce
 from itertools import groupby
@@ -11,16 +10,17 @@ from urllib.parse import urlparse, parse_qs, unquote
 import requests
 
 from record.category import TENHOU_TILE_CATEGORY
-from record.util import meld_from
 from tile.definition import Tile
 
-API_URL_TEMPLATE = 'http://e.mjv.jp/0/log/?{0}'
+API_URL_TEMPLATE = 'http://e.mjv.jp/0/log/plainfiles.cgi?{0}'
 
 
 def fetch_record_content(url):
     log_id = parse_qs(urlparse(url).query)['log'][0]
     url = API_URL_TEMPLATE.format(log_id)
-    return requests.get(url).text
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                             'Chrome/71.0.3578.98 Safari/537.36'}
+    return requests.get(url, headers=headers, allow_redirects=True).text
 
 
 SUIT_ORDER = 'mpsz'
@@ -43,97 +43,10 @@ def number_list(int_string: str, split=','):
             for x in int_string.split(split)]
 
 
-class GameState(metaclass=ABCMeta):
-    @abstractmethod
-    def scan(self, event) -> GameState:
-        pass
-
-    @property
-    @abstractmethod
-    def value(self):
-        pass
-
-    @property
-    @abstractmethod
-    def is_key_event(self):
-        pass
-
-    def with_events(self, events):
-        initial_state = self
-        for event in events:
-            initial_state = initial_state.scan(event)
-            yield initial_state
-
-    def with_key_events(self, events):
-        initial_state = self
-        for event in events:
-            if self.is_key_event(event):
-                initial_state = initial_state.scan(event)
-                yield initial_state
-
-
-class GameStateCollection(GameState):
-    @property
-    def is_key_event(self):
-        return self._composed_key_event_func
-
-    def __init__(self, **states):
-        super().__init__()
-        self._states = states
-        self._name_space_state = Namespace(**states)
-
-        def is_composed_key_event(event):
-            return all(st.is_key_event(event) for st in states.values())
-
-        self._composed_key_event_func = is_composed_key_event
-
-    @property
-    def value(self):
-        return self._name_space_state
-
-    def scan(self, event) -> GameState:
-        return GameStateCollection(
-            **{k: v.scan(event) for k, v in self._states.items()}
-        )
-
-
-class PlayerHand(GameState):
-    @property
-    def value(self):
-        return self.hand
-
-    def __init__(self, player: TenhouPlayer, hand=None):
-        super().__init__()
-        if hand is None:
-            hand = set()
-        self._player = player
-        self.hand = hand
-
-        def hand_is_key_event(event):
-            return event.tag == "INIT" or player.is_discard(event) or player.is_draw(event) or player.is_open_hand(event)
-
-        self._key_event_func = hand_is_key_event
-
-    def scan(self, event) -> GameState:
-        if event.tag == "INIT":
-            return PlayerHand(self._player, set(number_list(event.attrib['hai%d' % self._player.index])))
-        elif self._player.is_draw(event):
-            return PlayerHand(self._player, self.hand | {self._player.draw_tile_index(event)})
-        elif self._player.is_discard(event):
-            return PlayerHand(self._player, self.hand - {self._player.discard_tile_index(event)})
-        elif self._player.is_open_hand(event):
-            meld = meld_from(event)
-            return PlayerHand(self._player, self.hand - {meld.self_tiles})
-        raise ValueError("unexpected event for PlayerHand")
-
-    @property
-    def is_key_event(self):
-        return self._key_event_func
-
-
 class TenhouPlayer:
     def __init__(self, index, name_encoded, level, rate, sex):
         self.sex = sex
+
         self.rate = rate
         self.level = level
         self.name = unquote(name_encoded)
@@ -209,28 +122,99 @@ def list_of_xml_configs(xml_element_list):
 
 
 RANKS = [
-    u'新人',
-    u'9級',
-    u'8級',
-    u'7級',
-    u'6級',
-    u'5級',
-    u'4級',
-    u'3級',
-    u'2級',
-    u'1級',
-    u'初段',
-    u'二段',
-    u'三段',
-    u'四段',
-    u'五段',
-    u'六段',
-    u'七段',
-    u'八段',
-    u'九段',
-    u'十段',
-    u'天鳳位'
+    '新人',
+    '9級',
+    '8級',
+    '7級',
+    '6級',
+    '5級',
+    '4級',
+    '3級',
+    '2級',
+    '1級',
+    '初段',
+    '二段',
+    '三段',
+    '四段',
+    '五段',
+    '六段',
+    '七段',
+    '八段',
+    '九段',
+    '十段',
+    '天鳳位'
 ]
+
+SCORE_PATTERN = [
+    # // 一飜
+    "門前清自摸和",
+    "立直",
+    "一発",
+    "槍槓",
+    "嶺上開花",
+    "海底摸月",
+    "河底撈魚",
+    "平和",
+    "断幺九",
+    "一盃口",
+    "自風 東",
+    "自風 南",
+    "自風 西",
+    "自風 北",
+    "場風 東",
+    "場風 南",
+    "場風 西",
+    "場風 北",
+    "役牌 白",
+    "役牌 發",
+    "役牌 中",
+
+    # // 二飜
+    "両立直",
+    "七対子",
+    "混全帯幺九",
+    "一気通貫",
+    "三色同順",
+    "三色同刻",
+    "三槓子",
+    "対々和",
+    "三暗刻",
+    "小三元",
+    "混老頭",
+
+    # //  三飜
+    "二盃口",
+    "純全帯幺九",
+    "混一色",
+
+    # //  六飜
+    "清一色",
+
+    # //  満貫
+    "人和",
+
+    # //  役満
+    "天和",
+    "地和",
+    "大三元",
+    "四暗刻",
+    "四暗刻単騎",
+    "字一色",
+    "緑一色",
+    "清老頭",
+    "九蓮宝燈",
+    "純正九蓮宝燈",
+    "国士無双",
+    "国士無双１３面",
+    "大四喜",
+    "小四喜",
+    "四槓子",
+
+    "ドラ",
+    "裏ドラ",
+    "赤ドラ",
+]
+
 DRAW_INDICATOR = ['T', 'U', 'V', 'W']
 DISCARD_INDICATOR = ['D', 'E', 'F', 'G']
 

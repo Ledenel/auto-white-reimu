@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
+from typing import Set
 
 import bitstruct
 
@@ -79,11 +80,34 @@ def unpack_with(data_class, unpacker, value):
 
 def init_from_basic(tiles_basic, which_first):
     first_tile = tiles_basic[which_first]
-    self_tiles = set(tiles_basic) - first_tile
+    self_tiles = set(tiles_basic) - {first_tile}
     return {first_tile}, self_tiles
 
 
 class Meld(metaclass=ABCMeta):
+    @property
+    @abstractmethod
+    def borrowed_tiles(self) -> Set[int]:
+        pass
+
+    @property
+    @abstractmethod
+    def self_tiles(self) -> Set[int]:
+        pass
+
+    @property
+    @abstractmethod
+    def from_who(self):
+        pass
+
+    def is_opened(self) -> bool:
+        if self.borrowed_tiles:
+            return True
+        else:
+            return False
+
+
+class TenhouMeld(Meld, metaclass=ABCMeta):
     @property
     @abstractmethod
     def data_class(self):
@@ -97,16 +121,6 @@ class Meld(metaclass=ABCMeta):
     @property
     def data(self):
         return self._data
-
-    @property
-    @abstractmethod
-    def self_tiles(self):
-        pass
-
-    @property
-    @abstractmethod
-    def borrowed_tiles(self):
-        pass
 
     @property
     def borrowed_index(self):
@@ -127,7 +141,7 @@ class Meld(metaclass=ABCMeta):
         self._data = self.unpack(value)
 
 
-class Flush(Meld):
+class Flush(TenhouMeld):
     def __init__(self, who_index, value) -> None:
         super().__init__(who_index, value)
         data = self.data
@@ -159,7 +173,7 @@ class Flush(Meld):
         return flush_packer
 
 
-class Triplet(Meld):
+class Triplet(TenhouMeld):
     @property
     def data_class(self):
         return TripletData
@@ -192,7 +206,45 @@ class Triplet(Meld):
         return self._borrowed_tiles
 
 
-class Kan(Meld):
+class Kan(Meld, metaclass=ABCMeta):
+    @property
+    @abstractmethod
+    def is_opened_kan(self) -> bool:
+        pass
+
+
+class TenhouAddedKan(TenhouMeld):
+    @property
+    def data_class(self):
+        return AddedKanData
+
+    def __init__(self, who_index, value) -> None:
+        super().__init__(who_index, value)
+        triplet_kinds = SubCategory(34, 3)
+        triplet_color_number = SubCategory(4, 9)
+        tile_type, which_first = triplet_kinds.category(self.data.type7)
+        color, number = triplet_color_number.category(tile_type)
+        self._self_tiles = {TENHOU_TILE_CATEGORY.index((color, number, self.data.hai_added))}
+        self._borrowed_tiles = set()
+
+    @property
+    def unpacker(self):
+        return added_kan_packer
+
+    @property
+    def self_tiles(self):
+        return self._self_tiles
+
+    @property
+    def borrowed_tiles(self):
+        return self._borrowed_tiles
+
+
+class TenhouKan(TenhouMeld, Kan):
+    @property
+    def is_opened_kan(self) -> bool:
+        return self.data.kui != 0
+
     @property
     def data_class(self):
         return KanData
@@ -226,61 +278,31 @@ class Kan(Meld):
         return self._borrowed_tiles
 
 
-class AddedKan(Meld):
+class KanFromTriplet(Kan):
     @property
-    def data_class(self):
-        return AddedKanData
+    def is_opened_kan(self) -> bool:
+        return True
 
-    def __init__(self, who_index, value) -> None:
-        super().__init__(who_index, value)
-        triplet_kinds = SubCategory(34, 3)
-        triplet_color_number = SubCategory(4, 9)
-        tile_type, which_first = triplet_kinds.category(self.data.type7)
-        color, number = triplet_color_number.category(tile_type)
-        self._self_tiles = {TENHOU_TILE_CATEGORY.index((color, number, self.data.hai_added))}
-        self._borrowed_tiles = set()
+    def __init__(self, triplet_meld: Triplet, added_meld: TenhouAddedKan) -> None:
+        super().__init__()
+        self._self_tiles = triplet_meld.self_tiles | added_meld.self_tiles
+        self._borrowed_tiles = triplet_meld.borrowed_tiles
+        self._from_who = triplet_meld.from_who
 
     @property
-    def unpacker(self):
-        return added_kan_packer
+    def borrowed_tiles(self):
+        return self._borrowed_tiles
 
     @property
     def self_tiles(self):
         return self._self_tiles
 
     @property
-    def borrowed_tiles(self):
-        return self._borrowed_tiles
+    def from_who(self):
+        return self._from_who
 
 
-class AddedKan(Meld):
-    @property
-    def data_class(self):
-        return AddedKanData
-
-    def __init__(self, who_index, value) -> None:
-        super().__init__(who_index, value)
-        triplet_kinds = SubCategory(34, 3)
-        triplet_color_number = SubCategory(4, 9)
-        tile_type, which_first = triplet_kinds.category(self.data.type7)
-        color, number = triplet_color_number.category(tile_type)
-        self._self_tiles = {TENHOU_TILE_CATEGORY.index((color, number, self.data.hai_added))}
-        self._borrowed_tiles = set()
-
-    @property
-    def unpacker(self):
-        return added_kan_packer
-
-    @property
-    def self_tiles(self):
-        return self._self_tiles
-
-    @property
-    def borrowed_tiles(self):
-        return self._borrowed_tiles
-
-
-class Kita(Meld):
+class Kita(TenhouMeld):
     @property
     def data_class(self):
         return AddedKanData
@@ -347,8 +369,8 @@ def meld_from(event) -> Meld:
     elif type_of.koutsu:
         return Triplet(who, data)
     elif type_of.chakan:
-        return AddedKan(who, data)
+        return TenhouAddedKan(who, data)
     elif type_of.nuki:
         return Kita(who, data)
     else:
-        return Kan(who, data)
+        return TenhouKan(who, data)
