@@ -12,7 +12,7 @@ import requests
 from mahjong.record.category import TENHOU_TILE_CATEGORY
 from mahjong.tile.definition import Tile
 
-API_URL_TEMPLATE = 'http://e.mjv.jp/0/log/plainfiles.cgi?{0}'
+API_URL_TEMPLATE = 'http://e.mjv.jp/0/log/?{0}'
 
 
 def fetch_record_content(url):
