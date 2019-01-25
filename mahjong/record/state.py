@@ -100,7 +100,7 @@ class PlayerHand(GameState):
 
 
 def is_triplet_of(item: Triplet, added: TenhouAddedKan):
-    added_tile = tile_from_tenhou(list(item.self_tiles)[0])
+    added_tile = tile_from_tenhou(list(added.self_tiles)[0])
     triplet_representative = tile_from_tenhou(list(item.self_tiles)[0])
     return added_tile == triplet_representative
 
