@@ -23,9 +23,14 @@ def fetch_record_content(url):
 
 
 def download_url(view_url):
-    log_id = parse_qs(urlparse(view_url).query)['log'][0]
+    log_id = log_id_from_url(view_url)
     view_url = API_URL_TEMPLATE.format(log_id)
     return view_url
+
+
+def log_id_from_url(view_url):
+    log_id = parse_qs(urlparse(view_url).query)['log'][0]
+    return log_id
 
 
 SUIT_ORDER = 'mpsz'
