@@ -18,9 +18,8 @@ class GameState(metaclass=ABCMeta):
     def value(self):
         pass
 
-    @property
     @abstractmethod
-    def is_key_event(self):
+    def is_key_event(self, event) -> bool:
         pass
 
     def with_events(self, events):
@@ -38,19 +37,14 @@ class GameState(metaclass=ABCMeta):
 
 
 class GameStateCollection(GameState):
-    @property
-    def is_key_event(self):
-        return self._composed_key_event_func
+
+    def is_key_event(self, event):
+        return any(st.is_key_event(event) for st in self._states.values())
 
     def __init__(self, **states):
         super().__init__()
         self._states = states
         self._name_space_state = Namespace(**states)
-
-        def is_composed_key_event(event):
-            return any(st.is_key_event(event) for st in states.values())
-
-        self._composed_key_event_func = is_composed_key_event
 
     @property
     def value(self):
@@ -60,6 +54,10 @@ class GameStateCollection(GameState):
         return GameStateCollection(
             **{k: v.scan(event) for k, v in self._states.items()}
         )
+
+
+def is_game_init(event):
+    return event.tag == "INIT"
 
 
 class PlayerHand(GameState):
@@ -74,16 +72,8 @@ class PlayerHand(GameState):
         self._player = player
         self.hand = hand
 
-        def hand_is_key_event(event):
-            return event.tag == "INIT" \
-                   or player.is_discard(event) \
-                   or player.is_draw(event) \
-                   or player.is_open_hand(event)
-
-        self._key_event_func = hand_is_key_event
-
     def scan(self, event) -> GameState:
-        if event.tag == "INIT":
+        if is_game_init(event):
             return PlayerHand(self._player, set(number_list(event.attrib['hai%d' % self._player.index])))
         elif self._player.is_draw(event):
             return PlayerHand(self._player, self.hand | {self._player.draw_tile_index(event)})
@@ -94,9 +84,12 @@ class PlayerHand(GameState):
             return PlayerHand(self._player, self.hand - meld.self_tiles)
         return self
 
-    @property
-    def is_key_event(self):
-        return self._key_event_func
+    def is_key_event(self, event):
+        player = self._player
+        return is_game_init(event) \
+               or player.is_discard(event) \
+               or player.is_draw(event) \
+               or player.is_open_hand(event)
 
 
 def is_triplet_of(item: Triplet, added: TenhouAddedKan):
@@ -111,12 +104,8 @@ class PlayerMeld(GameState):
         if meld_list is None:
             meld_list = []
 
-        def meld_key(event):
-            return self._player.is_open_hand(event)
-
         self._meld_list: List[Meld] = meld_list
         self._player = player
-        self._meld_key = meld_key
 
     def scan(self, event) -> GameState:
         if self.is_key_event(event):
@@ -136,9 +125,8 @@ class PlayerMeld(GameState):
     def value(self):
         return self._meld_list
 
-    @property
-    def is_key_event(self):
-        return self._meld_key
+    def is_key_event(self, event):
+        return self._player.is_open_hand(event)
 
 
 class DiscardTiles(GameState):
@@ -157,11 +145,33 @@ class DiscardTiles(GameState):
         self._discard_tiles = discard_tiles
         self._player = player
 
-        def is_discard_event(event):
-            return self._player.is_discard(event)
+    def is_key_event(self, event):
+        return self._player.is_discard(event)
 
-        self._is_discard_event = is_discard_event
+
+def is_dora_indicator_event(event):
+    return event.tag == "DORA"
+
+
+class DoraIndicators(GameState):
+    def scan(self, event) -> GameState:
+        if is_game_init(event):
+            seed_list = number_list(event.attrib["seed"])
+            return DoraIndicators([seed_list[-1]])
+        elif is_dora_indicator_event(event):
+            return DoraIndicators(self._dora_indicators + [int(event.attrib['hai'])])
+        else:
+            return self
+
+    def __init__(self, dora_indicators=None) -> None:
+        super().__init__()
+        if dora_indicators is None:
+            dora_indicators = []
+        self._dora_indicators = dora_indicators
 
     @property
-    def is_key_event(self):
-        return self._is_discard_event
+    def value(self):
+        return self._dora_indicators
+
+    def is_key_event(self, event):
+        return is_game_init(event) or is_dora_indicator_event(event)

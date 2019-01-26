@@ -54,6 +54,10 @@ def number_list(int_string: str, split=','):
             for x in int_string.split(split)]
 
 
+def xml_check_as_player(event, player_index, tag_name):
+    return event.tag == tag_name and int(event.attrib["who"]) == player_index
+
+
 class TenhouPlayer:
     def __init__(self, index, name_encoded, level, rate, sex):
         self.sex = sex
@@ -83,28 +87,16 @@ class TenhouPlayer:
         return int(regex.match(discard_event.tag).group(1))
 
     def is_open_hand(self, event):
-        return event.tag == "N" and int(event.attrib["who"]) == self.index
+        return xml_check_as_player(event, self.index, "N")
 
     def opened_hand_type(self, event):
         return meld_from(event)
 
-    def is_reach(self):
-        return event.tag == "REACH" and int(event)
+    def is_reach(self, event):
+        return xml_check_as_player(event, self.index, "REACH")
 
-    def win(self, from_player, tile_index):
-        pass
-
-    def chi(self, from_player, tile_index):
-        pass
-
-    def pon(self, from_player, tile_index):
-        pass
-
-    def kan(self, from_player, tile_index):
-        pass
-
-    def adding_kan(self, tile_index):
-        pass
+    def is_win(self, event):
+        return xml_check_as_player(event, self.index, "AGARI")
 
 
 class TenhouGame:
