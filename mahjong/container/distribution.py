@@ -5,9 +5,9 @@ from abc import abstractmethod
 from collections import Iterator, Counter
 from numbers import Number
 
-from mahjong.container.set import TileSet
-from mahjong.tile.definition import Tile
-from mahjong.container.utils import tile_set_from_string
+from .set import TileSet
+from ..tile.definition import Tile
+from .utils import tile_set_from_string
 
 
 class TileDistribution:

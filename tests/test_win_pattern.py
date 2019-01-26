@@ -1,8 +1,8 @@
 from collections import Iterable
 from unittest import TestCase
 
-from container.utils import tile_set_from_string
-from container.pattern.win import NormalTypeWin
+from mahjong.container.utils import tile_set_from_string
+from mahjong.container.pattern.win import NormalTypeWin
 
 
 def counting(iterable: Iterable) -> int:

@@ -4,8 +4,8 @@ from abc import ABCMeta, abstractmethod
 from argparse import Namespace
 from typing import List
 
-from mahjong.record.reader import TenhouPlayer, number_list, tile_from_tenhou
-from mahjong.record.util import meld_from, TenhouMeld, TenhouAddedKan, Meld, Triplet, KanFromTriplet
+from .reader import TenhouPlayer, number_list, tile_from_tenhou
+from .util import meld_from, TenhouMeld, TenhouAddedKan, Meld, Triplet, KanFromTriplet
 
 
 class GameState(metaclass=ABCMeta):
@@ -139,3 +139,29 @@ class PlayerMeld(GameState):
     @property
     def is_key_event(self):
         return self._meld_key
+
+
+class DiscardTiles(GameState):
+    def scan(self, event) -> GameState:
+        if self.is_key_event(event):
+            return DiscardTiles(self._player, self._discard_tiles + [self._player.discard_tile_index(event)])
+        return self
+
+    @property
+    def value(self):
+        return self._discard_tiles
+
+    def __init__(self, player: TenhouPlayer, discard_tiles=None):
+        if discard_tiles is None:
+            discard_tiles = []
+        self._discard_tiles = discard_tiles
+        self._player = player
+
+        def is_discard_event(event):
+            return self._player.is_discard(event)
+
+        self._is_discard_event = is_discard_event
+
+    @property
+    def is_key_event(self):
+        return self._is_discard_event

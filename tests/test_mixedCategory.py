@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import pytest
 
-from record.category import SubCategory, MixedCategory
+from mahjong.record.category import SubCategory, MixedCategory
 
 categories = [
     (0, 0),

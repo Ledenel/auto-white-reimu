@@ -9,8 +9,9 @@ from urllib.parse import urlparse, parse_qs, unquote
 
 import requests
 
-from mahjong.record.category import TENHOU_TILE_CATEGORY
-from mahjong.tile.definition import Tile
+from .category import TENHOU_TILE_CATEGORY
+from ..tile.definition import Tile
+from .util import meld_from
 
 API_URL_TEMPLATE = 'http://e.mjv.jp/0/log/?{0}'
 
@@ -84,8 +85,11 @@ class TenhouPlayer:
     def is_open_hand(self, event):
         return event.tag == "N" and int(event.attrib["who"]) == self.index
 
-    def reach(self):
-        pass
+    def opened_hand_type(self, event):
+        return meld_from(event)
+
+    def is_reach(self):
+        return event.tag == "REACH" and int(event)
 
     def win(self, from_player, tile_index):
         pass

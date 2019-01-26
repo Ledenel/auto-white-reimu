@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from container.utils import tiles_from_string
+from mahjong.container.utils import tiles_from_string
 
 
 class TestTileHashNum(TestCase):

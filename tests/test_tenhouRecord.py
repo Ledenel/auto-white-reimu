@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from record.reader import from_url
+from mahjong.record.reader import from_url
 
 
 class TestTenhouRecord(TestCase):

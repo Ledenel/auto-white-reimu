@@ -2,8 +2,8 @@ import bisect
 import re
 from typing import Iterable
 
-from mahjong.container.set import TileSet
-from mahjong.tile.definition import Tile
+from .set import TileSet
+from ..tile.definition import Tile
 
 _tile_group_regex = re.compile(r"[0-9]+[%s]" % (''.join(Tile.SUIT | Tile.HONOR)))
 

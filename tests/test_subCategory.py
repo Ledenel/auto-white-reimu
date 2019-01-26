@@ -2,7 +2,7 @@ from itertools import product
 
 import pytest
 
-from record.category import SubCategory
+from mahjong.record.category import SubCategory
 
 categories = list(product(*(range(x) for x in [2, 3, 4])))
 

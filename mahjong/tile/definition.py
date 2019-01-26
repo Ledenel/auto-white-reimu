@@ -4,7 +4,7 @@ from functools import total_ordering
 
 from typing import Optional
 
-from mahjong.container.set import TileSet
+from ..container.set import TileSet
 
 _suit_ordering = {
     'm': 0,

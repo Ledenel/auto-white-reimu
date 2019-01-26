@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from tile import definition
-from container import utils
+from mahjong.container import utils
+from mahjong.tile import definition
 
 
 class TestTile(TestCase):

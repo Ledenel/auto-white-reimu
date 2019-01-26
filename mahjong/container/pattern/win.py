@@ -3,9 +3,9 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from typing import List, Optional, Iterator, Iterable, Tuple
 
-from mahjong.tile.definition import Tile
-from mahjong.container.set import TileSet
-from mahjong.container.utils import distinct
+from ...tile.definition import Tile
+from ..set import TileSet
+from ..utils import distinct
 
 
 class WinPattern(metaclass=ABCMeta):
