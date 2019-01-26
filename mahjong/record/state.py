@@ -8,6 +8,20 @@ from .reader import TenhouPlayer, number_list, tile_from_tenhou
 from .util import meld_from, TenhouMeld, TenhouAddedKan, Meld, Triplet, KanFromTriplet
 
 
+def is_game_init(event):
+    return event.tag == "INIT"
+
+
+def is_triplet_of(item: Triplet, added: TenhouAddedKan):
+    added_tile = tile_from_tenhou(list(added.self_tiles)[0])
+    triplet_representative = tile_from_tenhou(list(item.self_tiles)[0])
+    return added_tile == triplet_representative
+
+
+def is_dora_indicator_event(event):
+    return event.tag == "DORA"
+
+
 class GameState(metaclass=ABCMeta):
     @abstractmethod
     def scan(self, event) -> GameState:
@@ -56,10 +70,6 @@ class GameStateCollection(GameState):
         )
 
 
-def is_game_init(event):
-    return event.tag == "INIT"
-
-
 class PlayerHand(GameState):
     @property
     def value(self):
@@ -90,12 +100,6 @@ class PlayerHand(GameState):
                or player.is_discard(event) \
                or player.is_draw(event) \
                or player.is_open_hand(event)
-
-
-def is_triplet_of(item: Triplet, added: TenhouAddedKan):
-    added_tile = tile_from_tenhou(list(added.self_tiles)[0])
-    triplet_representative = tile_from_tenhou(list(item.self_tiles)[0])
-    return added_tile == triplet_representative
 
 
 class PlayerMeld(GameState):
@@ -147,10 +151,6 @@ class DiscardTiles(GameState):
 
     def is_key_event(self, event):
         return self._player.is_discard(event)
-
-
-def is_dora_indicator_event(event):
-    return event.tag == "DORA"
 
 
 class DoraIndicators(GameState):
