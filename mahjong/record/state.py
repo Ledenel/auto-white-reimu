@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import re
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
 from typing import List
 
-from .reader import TenhouPlayer, number_list, tile_from_tenhou
-from .util import meld_from, TenhouMeld, TenhouAddedKan, Meld, Triplet, KanFromTriplet
+from .reader import TenhouPlayer, number_list, tile_from_tenhou, DRAW_INDICATOR, DISCARD_INDICATOR
+from .util import meld_from, TenhouAddedKan, Meld, Triplet, KanFromTriplet
 
 
 def is_game_init(event):
@@ -18,8 +19,29 @@ def is_triplet_of(item: Triplet, added: TenhouAddedKan):
     return added_tile == triplet_representative
 
 
+def is_open_hand(event):
+    return event.tag == "N"
+
+
 def is_dora_indicator_event(event):
     return event.tag == "DORA"
+
+
+DRAW_ALL_REGEX = re.compile(r"^[%s]([0-9]+)$" % ("".join(DRAW_INDICATOR)))
+
+DISCARD_ALL_REGEX = re.compile(r"^[%s]([0-9]+)$" % ("".join(DISCARD_INDICATOR)))
+
+
+def draw_value(event):
+    matched = DRAW_ALL_REGEX.match(event.tag)
+    if matched:
+        return int(matched.group(1))
+
+
+def discard_value(event):
+    matched = DISCARD_ALL_REGEX.match(event.tag)
+    if matched:
+        return int(matched.group(1))
 
 
 class GameState(metaclass=ABCMeta):
@@ -32,9 +54,8 @@ class GameState(metaclass=ABCMeta):
     def value(self):
         pass
 
-    @abstractmethod
     def is_key_event(self, event) -> bool:
-        pass
+        return self.scan(event) != self
 
     def with_events(self, events):
         initial_state = self
@@ -112,7 +133,7 @@ class PlayerMeld(GameState):
         self._player = player
 
     def scan(self, event) -> GameState:
-        if self.is_key_event(event):
+        if self._player.is_open_hand(event):
             meld = meld_from(event)
             if isinstance(meld, TenhouAddedKan):
                 return PlayerMeld(self._player,
@@ -123,6 +144,8 @@ class PlayerMeld(GameState):
                                   )
             else:
                 return PlayerMeld(self._player, self._meld_list + [meld])
+        elif is_game_init(event):
+            return PlayerMeld(self._player)
         return self
 
     @property
@@ -130,13 +153,15 @@ class PlayerMeld(GameState):
         return self._meld_list
 
     def is_key_event(self, event):
-        return self._player.is_open_hand(event)
+        return self._player.is_open_hand(event) or is_game_init(event)
 
 
 class DiscardTiles(GameState):
     def scan(self, event) -> GameState:
-        if self.is_key_event(event):
+        if self._player.is_discard(event):
             return DiscardTiles(self._player, self._discard_tiles + [self._player.discard_tile_index(event)])
+        elif is_game_init(event):
+            return DiscardTiles()
         return self
 
     @property
@@ -150,7 +175,7 @@ class DiscardTiles(GameState):
         self._player = player
 
     def is_key_event(self, event):
-        return self._player.is_discard(event)
+        return self._player.is_discard(event) or is_game_init(event)
 
 
 class DoraIndicators(GameState):
@@ -175,3 +200,31 @@ class DoraIndicators(GameState):
 
     def is_key_event(self, event):
         return is_game_init(event) or is_dora_indicator_event(event)
+
+
+class InvisibleTiles(GameState):
+    def __init__(self, invisible_tiles=None):
+        if invisible_tiles is None:
+            invisible_tiles = set(range((3 * 9 + 7) * 4))
+        self._invisible_tiles = invisible_tiles
+
+    def scan(self, event) -> GameState:
+        if is_game_init(event):
+            brand = InvisibleTiles()
+            dora = DoraIndicators().scan(event).value
+            brand._invisible_tiles.remove(dora)
+            return brand
+
+        discard_val = discard_value(event)
+        if discard_val:
+            return InvisibleTiles(self._invisible_tiles - {discard_val})
+        elif is_open_hand(event):
+            return InvisibleTiles(self._invisible_tiles - set(meld_from(event).self_tiles))
+        elif is_dora_indicator_event(event):
+            return InvisibleTiles(self._invisible_tiles - {DoraIndicators().scan(event).value})
+        return self
+
+    @property
+    def value(self):
+        return self._invisible_tiles
+
