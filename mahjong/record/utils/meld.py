@@ -1,11 +1,7 @@
 from abc import ABCMeta, abstractmethod
-from collections import namedtuple
 from typing import Set
 
-import bitstruct
-
-import struct
-
+from .bit import bit_struct_from_desc, named_tuple_from_desc, unpack_with
 from ..category import SubCategory, TENHOU_TILE_CATEGORY
 
 flush_desc = """
@@ -58,24 +54,7 @@ padding__:u2
 type8:u8
 """
 
-
-def bit_struct_from_desc(desc_str):
-    reverse_order = desc_str.strip().split()
-    reverse_order.reverse()
-    return bitstruct.compile(">%s" % "".join(line.split(":")[1] for line in reverse_order))
-
-
-def named_tuple_from_desc(type_name, desc_str):
-    reverse_order = desc_str.strip().split()
-    reverse_order.reverse()
-    return namedtuple(type_name, [line.split(":")[0] for line in reverse_order])
-
-
 FROM_MAP = [0, 1, 2, 3]
-
-
-def unpack_with(data_class, unpacker, value):
-    return data_class(*unpacker.unpack(struct.pack(">H", int(value))))
 
 
 def init_from_basic(tiles_basic, which_first):
