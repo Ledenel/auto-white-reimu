@@ -11,7 +11,7 @@ import requests
 
 from .category import TENHOU_TILE_CATEGORY
 from ..tile.definition import Tile
-from .util import meld_from
+from .utils.meld import meld_from
 
 API_URL_TEMPLATE = 'http://e.mjv.jp/0/log/?{0}'
 

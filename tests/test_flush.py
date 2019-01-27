@@ -1,10 +1,8 @@
-from unittest import TestCase
-
 import pytest
 
 from mahjong.container.utils import tiles_from_string
 from mahjong.record.reader import tile_from_tenhou
-from mahjong.record.util import Flush
+from mahjong.record.utils.meld import Flush
 
 basic_data = ['9239', '33031', '13511', '26663', '58615', '50519', '26687', '25007', '39199', '62791', '62623', '9639',
               '59703']

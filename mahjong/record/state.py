@@ -6,7 +6,7 @@ from argparse import Namespace
 from typing import List
 
 from .reader import TenhouPlayer, number_list, tile_from_tenhou, DRAW_INDICATOR, DISCARD_INDICATOR
-from .util import meld_from, TenhouAddedKan, Meld, Triplet, KanFromTriplet
+from .utils.meld import meld_from, TenhouAddedKan, Meld, Triplet, KanFromTriplet
 
 
 def is_game_init(event):
