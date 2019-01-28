@@ -16,6 +16,10 @@ class WinPattern(metaclass=ABCMeta):
         return False
 
     def win_selections(self, hand: TileSet) -> Iterator[List[TileSet]]:
+        hand.re_sort()
+        return self._win_selections(hand)
+
+    def _win_selections(self, hand: TileSet) -> Iterator[List[TileSet]]:
         if self.has_win():
             yield []
         if self.need_count() > sum(hand.values()):
@@ -26,7 +30,10 @@ class WinPattern(metaclass=ABCMeta):
 
         unit_list = list(self.update_possible_units(hand, possible_units))
 
-        possible_units &= hand
+        for tile, count in possible_units.items():
+            if count > 0:
+                possible_units[tile] = hand[tile]
+        # possible_units &= hand
         hand = possible_units
 
         if self.need_count() > sum(hand.values()):
@@ -34,7 +41,7 @@ class WinPattern(metaclass=ABCMeta):
 
         for tile, unit_tuples in unit_list:
             for unit, next_state in unit_tuples:
-                yield from ([unit] + tail for tail in next_state.win_selections(hand - unit))
+                yield from ([unit] + tail for tail in next_state._win_selections(hand - unit))
             del hand[tile]
 
         # for tile in list(hand.keys()):

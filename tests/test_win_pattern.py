@@ -1,6 +1,8 @@
 from collections import Iterable
 from unittest import TestCase
 
+import pytest
+
 from mahjong.container.utils import tile_set_from_string
 from mahjong.container.pattern.win import NormalTypeWin
 
@@ -43,3 +45,19 @@ class TestWinPattern(TestCase):
         assert counting(NormalTypeWin().unique_win_selections(
             tile_set_from_string("111123456s55567p8p")
         )) == 3
+
+
+hands = [
+    "1112246667778899m",
+]
+
+answers = [
+    "111m,22m,666m,789m,789m",
+]
+
+
+@pytest.mark.parametrize("hand,ans", zip(hands, answers))
+def test_tenhou_reasoning(hand, ans):
+    answer = [sorted(tile_set_from_string(x) for x in selection.split(',')) for selection in ans.split(';')]
+    answer.sort()
+    assert sorted(NormalTypeWin().unique_win_selections(tile_set_from_string(hand))) == answer
