@@ -39,6 +39,9 @@ class TenhouPlayer:
     def is_open_hand(self, event):
         return is_event_triggered_by_player(event, self.index, "N")
 
+    def is_player_choice(self, event):
+        return self.is_discard(event) or self.is_open_hand(event) or self.is_win(event)
+
     def opened_hand_type(self, event):
         return meld_from(event)
 

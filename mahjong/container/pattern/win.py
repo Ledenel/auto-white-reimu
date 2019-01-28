@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from typing import List, Optional, Iterator, Iterable, Tuple
+from typing import List, Optional, Iterator, Iterable, Tuple, Set
 
 from ...tile.definition import Tile
 from ..set import TileSet
@@ -95,3 +95,22 @@ class NormalTypeWin(WinPattern):
 
     def need_count(self) -> int:
         return self._pairs * 2 + self._melds * 3
+
+
+class UniquePairs(WinPattern):
+    def __init__(self, pairs: int = 7, used: Set[Tile] = None):
+        super().__init__()
+        if used is None:
+            used = set()
+        self._pairs = pairs
+        self._used = used
+
+    def has_win(self) -> bool:
+        return self._pairs == 0
+
+    def next_states(self, tile: Tile) -> Optional[Iterable[Tuple[TileSet, WinPattern]]]:
+        if tile not in self._used and self._pairs > 0:
+            yield (tile.pair(), UniquePairs(self._pairs - 1, self._used | {tile}))
+
+    def need_count(self) -> int:
+        return self._pairs * 2
