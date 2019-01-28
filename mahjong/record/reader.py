@@ -9,6 +9,7 @@ from urllib.parse import urlparse, parse_qs, unquote
 
 import requests
 
+from .state import is_game_init
 from .category import TENHOU_TILE_CATEGORY
 from ..tile.definition import Tile
 from .utils.meld import meld_from
@@ -235,7 +236,7 @@ class TenhouRecord:
         self.events = events
         grouped = [(condition, list(group))
                    for condition, group in
-                   groupby(events, lambda x: x.tag == "INIT")]
+                   groupby(events, is_game_init)]
         head, *tail = grouped
         _, head_events = head
         self._meta = list_of_xml_configs(head_events)
