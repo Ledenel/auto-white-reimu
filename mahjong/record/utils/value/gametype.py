@@ -1,4 +1,4 @@
-from .bit import bit_struct_from_desc, named_tuple_from_desc, unpack_with
+from ..bit import bit_struct_from_desc, named_tuple_from_desc, unpack_with
 
 game_type_desc = """
 preserved:u1

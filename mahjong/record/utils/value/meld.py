@@ -1,8 +1,10 @@
 from abc import ABCMeta, abstractmethod
 from typing import Set
 
-from .bit import bit_struct_from_desc, named_tuple_from_desc, unpack_with
-from ..category import SubCategory, TENHOU_TILE_CATEGORY
+from ..bit import bit_struct_from_desc, named_tuple_from_desc, unpack_with
+from ...category import SubCategory
+from ..constant import TENHOU_TILE_CATEGORY
+from ..value.tile import tile_from_tenhou
 
 flush_desc = """
 kui:u2
@@ -353,3 +355,9 @@ def meld_from(event) -> Meld:
         return Kita(who, data)
     else:
         return TenhouKan(who, data)
+
+
+def is_triplet_of_added_kan(item: Triplet, added: TenhouAddedKan):
+    added_tile = tile_from_tenhou(list(added.self_tiles)[0])
+    triplet_representative = tile_from_tenhou(list(item.self_tiles)[0])
+    return added_tile == triplet_representative

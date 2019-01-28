@@ -1,4 +1,3 @@
-from itertools import groupby, chain
 from typing import Iterable, TypeVar, Callable, Iterator, Tuple, List, Union
 
 
@@ -61,11 +60,3 @@ class StageGroupby:
             self.currkey = self.keyfunc(self.currvalue)
 
 
-def interval_stage(itr: Iterable[T], *stages: K,
-                   key_func: Callable[[T], K] = identical) -> Iterator[
-    Tuple[List[K], Iterator[T]]]:
-    for k, g in groupby(itr, key_func):
-        if k in stages:
-            chain()
-        else:
-            yield ([], g)

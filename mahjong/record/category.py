@@ -3,7 +3,7 @@ import math
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from functools import reduce
-from typing import Iterable, List, NamedTuple
+from typing import Iterable
 
 
 class Category(metaclass=ABCMeta):
@@ -65,8 +65,8 @@ class MixedCategory(Category):
         return concated if self._merged_category_classes is None else belongs_class(*concated)
 
     def index(self, category_tuple):
-        category, sub_id = category_tuple
-        return self._accumulate_range[category] + sub_id
+        category, *sub_id = category_tuple
+        return self._accumulate_range[category] + self.category_list[category - 1].index(tuple(sub_id))
 
 
 class SubCategory(Category):
@@ -108,4 +108,3 @@ class SubCategory(Category):
         return math.inf if self._max is None else self._max
 
 
-TENHOU_TILE_CATEGORY = SubCategory(4, 9, 4)

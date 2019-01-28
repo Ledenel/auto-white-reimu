@@ -1,47 +1,13 @@
 from __future__ import annotations
 
-import re
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
 from typing import List
 
-from .reader import TenhouPlayer, number_list, tile_from_tenhou, DRAW_INDICATOR, DISCARD_INDICATOR
-from .utils.meld import meld_from, TenhouAddedKan, Meld, Triplet, KanFromTriplet
-
-
-def is_game_init(event):
-    return event.tag == "INIT"
-
-
-def is_triplet_of(item: Triplet, added: TenhouAddedKan):
-    added_tile = tile_from_tenhou(list(added.self_tiles)[0])
-    triplet_representative = tile_from_tenhou(list(item.self_tiles)[0])
-    return added_tile == triplet_representative
-
-
-def is_open_hand(event):
-    return event.tag == "N"
-
-
-def is_dora_indicator_event(event):
-    return event.tag == "DORA"
-
-
-DRAW_ALL_REGEX = re.compile(r"^[%s]([0-9]+)$" % ("".join(DRAW_INDICATOR)))
-
-DISCARD_ALL_REGEX = re.compile(r"^[%s]([0-9]+)$" % ("".join(DISCARD_INDICATOR)))
-
-
-def draw_value(event):
-    matched = DRAW_ALL_REGEX.match(event.tag)
-    if matched:
-        return int(matched.group(1))
-
-
-def discard_value(event):
-    matched = DISCARD_ALL_REGEX.match(event.tag)
-    if matched:
-        return int(matched.group(1))
+from .utils.event import is_game_init, is_open_hand, is_dora_indicator_event, discard_value
+from .player import TenhouPlayer
+from .utils.value.general import number_list
+from .utils.value.meld import meld_from, TenhouAddedKan, Meld, Triplet, KanFromTriplet, is_triplet_of_added_kan
 
 
 class GameState(metaclass=ABCMeta):
@@ -138,7 +104,7 @@ class PlayerMeld(GameState):
             if isinstance(meld, TenhouAddedKan):
                 return PlayerMeld(self._player,
                                   [(KanFromTriplet(item, meld)
-                                    if isinstance(item, Triplet) and is_triplet_of(item, meld)
+                                    if isinstance(item, Triplet) and is_triplet_of_added_kan(item, meld)
                                     else item)
                                    for item in self._meld_list]
                                   )

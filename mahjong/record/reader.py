@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-import re
 import xml.etree.ElementTree as ET
 from argparse import Namespace
 from functools import reduce
 from itertools import groupby
-from urllib.parse import urlparse, parse_qs, unquote
+from urllib.parse import urlparse, parse_qs
 
 import requests
 
-from .state import is_game_init
-from .category import TENHOU_TILE_CATEGORY
-from ..tile.definition import Tile
-from .utils.meld import meld_from
-
-API_URL_TEMPLATE = 'http://e.mjv.jp/0/log/?{0}'
+from .player import TenhouPlayer
+from .utils.constant import API_URL_TEMPLATE
+from .utils.value.gametype import GameType
+from .utils.event import is_game_init
+from .utils.value.general import number_list
 
 
 def fetch_record_content(url):
@@ -35,69 +33,6 @@ def log_id_from_url(view_url):
     return log_id
 
 
-SUIT_ORDER = 'mpsz'
-
-"""
-tenhou index is numbered as [1m,1m,1m,1m,2m,2m,...,9m,1p,...,9p,1s,...,9s,1z,...,7z,7z,7z,7z]
-numbered first 5m,5s,5p is considered as aka dora.
-"""
-
-
-def tile_from_tenhou(index):
-    color, number, _ = TENHOU_TILE_CATEGORY.category(index)
-    return Tile(number + 1, SUIT_ORDER[color])
-
-
-def number_list(int_string: str, split=','):
-    return [int(float(x))
-            if int(float(x)) == float(x)
-            else float(x)
-            for x in int_string.split(split)]
-
-
-def xml_check_as_player(event, player_index, tag_name):
-    return event.tag == tag_name and int(event.attrib["who"]) == player_index
-
-
-class TenhouPlayer:
-    def __init__(self, index, name_encoded, level, rate, sex):
-        self.sex = sex
-
-        self.rate = rate
-        self.level = level
-        self.name = unquote(name_encoded)
-        self.index = index
-
-    def clear(self):
-        pass
-
-    def is_draw(self, event):
-        regex = DRAW_REGEX[self.index]
-        return regex.match(event.tag)
-
-    def draw_tile_index(self, draw_event):
-        regex = DRAW_REGEX[self.index]
-        return int(regex.match(draw_event.tag).group(1))
-
-    def is_discard(self, event):
-        regex = DISCARD_REGEX[self.index]
-        return regex.match(event.tag)
-
-    def discard_tile_index(self, discard_event):
-        regex = DISCARD_REGEX[self.index]
-        return int(regex.match(discard_event.tag).group(1))
-
-    def is_open_hand(self, event):
-        return xml_check_as_player(event, self.index, "N")
-
-    def opened_hand_type(self, event):
-        return meld_from(event)
-
-    def is_reach(self, event):
-        return xml_check_as_player(event, self.index, "REACH")
-
-    def is_win(self, event):
-        return xml_check_as_player(event, self.index, "AGARI")
 
 
 class TenhouGame:
@@ -128,111 +63,8 @@ def list_of_xml_configs(xml_element_list):
     return reduce(xml_message_config_scan, xml_element_list, Namespace())
 
 
-RANKS = [
-    '新人',
-    '9級',
-    '8級',
-    '7級',
-    '6級',
-    '5級',
-    '4級',
-    '3級',
-    '2級',
-    '1級',
-    '初段',
-    '二段',
-    '三段',
-    '四段',
-    '五段',
-    '六段',
-    '七段',
-    '八段',
-    '九段',
-    '十段',
-    '天鳳位'
-]
-
-SCORE_PATTERN = [
-    # // 一飜
-    "門前清自摸和",
-    "立直",
-    "一発",
-    "槍槓",
-    "嶺上開花",
-    "海底摸月",
-    "河底撈魚",
-    "平和",
-    "断幺九",
-    "一盃口",
-    "自風 東",
-    "自風 南",
-    "自風 西",
-    "自風 北",
-    "場風 東",
-    "場風 南",
-    "場風 西",
-    "場風 北",
-    "役牌 白",
-    "役牌 發",
-    "役牌 中",
-
-    # // 二飜
-    "両立直",
-    "七対子",
-    "混全帯幺九",
-    "一気通貫",
-    "三色同順",
-    "三色同刻",
-    "三槓子",
-    "対々和",
-    "三暗刻",
-    "小三元",
-    "混老頭",
-
-    # //  三飜
-    "二盃口",
-    "純全帯幺九",
-    "混一色",
-
-    # //  六飜
-    "清一色",
-
-    # //  満貫
-    "人和",
-
-    # //  役満
-    "天和",
-    "地和",
-    "大三元",
-    "四暗刻",
-    "四暗刻単騎",
-    "字一色",
-    "緑一色",
-    "清老頭",
-    "九蓮宝燈",
-    "純正九蓮宝燈",
-    "国士無双",
-    "国士無双１３面",
-    "大四喜",
-    "小四喜",
-    "四槓子",
-
-    "ドラ",
-    "裏ドラ",
-    "赤ドラ",
-]
-
-DRAW_INDICATOR = ['T', 'U', 'V', 'W']
-DISCARD_INDICATOR = ['D', 'E', 'F', 'G']
-
-DRAW_REGEX = [re.compile(r"^%s([0-9]+)" % draw) for draw in DRAW_INDICATOR]
-DISCARD_REGEX = [re.compile(r"^%s([0-9]+)" % draw) for draw in DISCARD_INDICATOR]
-
-
 class TenhouRecord:
     def __init__(self, events):
-        player_mode = 4
-
         self.events = events
         grouped = [(condition, list(group))
                    for condition, group in
@@ -250,7 +82,8 @@ class TenhouRecord:
             self.game_list.append(TenhouGame(initial))
 
         meta = self._meta
-
+        self.game_type = GameType(meta.GO.type)
+        player_mode = self.game_type.player_count()
         self.players = [
             TenhouPlayer(index, name_encoded, level, rate, sex)
             for index, name_encoded, level, rate, sex in zip(

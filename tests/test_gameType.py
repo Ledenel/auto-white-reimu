@@ -1,8 +1,6 @@
-from unittest import TestCase
-
 import pytest
 
-from mahjong.record.utils.gametype import GameType
+from mahjong.record.utils.value.gametype import GameType
 
 types = [
     '169',
