@@ -35,6 +35,7 @@ ABBBBBC BBBBBB A"""
 def test_stage_group_key(ori, stage, key):
     assert list(k for k, _ in StageGroupby(ori, *stage)) == key
 
+
 @pytest.mark.parametrize("ori,stage,value", zip(
     origins.split('\n'),
     (x.split(",") for x in stages.split('\n')),
