@@ -32,6 +32,8 @@ def _pick(values, true_left, default=""):
 class GameType:
     def __init__(self, type_data):
         self.data = unpack_with(GameTypeData, game_type_packer, type_data)
+        self.data.preserved = 0
+        self.data.padding_ = 0
 
     def player_count(self) -> int:
         return 3 if self.data.three_players else 4
@@ -67,6 +69,9 @@ class GameType:
 
     def show_discard_shadow(self) -> bool:
         return self.data.show_discard_shadow
+
+    def __eq__(self, other):
+        return self.data == other.data
 
     def __str__(self) -> str:
         return "%s%s%s%s%s%s%s%s" % (
