@@ -3,15 +3,15 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 from argparse import Namespace
 from functools import reduce
-from itertools import groupby
 from urllib.parse import urlparse, parse_qs
 
 import requests
 
+from .stage import StageGroupby
 from .player import TenhouPlayer
 from .utils.constant import API_URL_TEMPLATE
-from .utils.value.gametype import GameType
 from .utils.event import is_game_init
+from .utils.value.gametype import GameType
 from .utils.value.general import number_list
 
 
@@ -31,8 +31,6 @@ def download_url(view_url):
 def log_id_from_url(view_url):
     log_id = parse_qs(urlparse(view_url).query)['log'][0]
     return log_id
-
-
 
 
 class TenhouGame:
@@ -66,20 +64,10 @@ def list_of_xml_configs(xml_element_list):
 class TenhouRecord:
     def __init__(self, events):
         self.events = events
-        grouped = [(condition, list(group))
-                   for condition, group in
-                   groupby(events, is_game_init)]
-        head, *tail = grouped
-        _, head_events = head
+        head_events, *game_chunks = list(list(g) for _, g in StageGroupby(events, True, False, key=is_game_init))
         self._meta = list_of_xml_configs(head_events)
         self._end_meta = list_of_xml_configs([events[-1]])
-        game_chunks = (tail[i:i + 2] for i in range(0, len(tail), 2))
-        self.game_list = []
-        for game_chunk in game_chunks:
-            initial = []
-            for _, group in game_chunk:
-                initial += list(group)
-            self.game_list.append(TenhouGame(initial))
+        self.game_list = [TenhouGame(item) for item in game_chunks]
 
         meta = self._meta
         self.game_type = GameType(meta.GO.type)
