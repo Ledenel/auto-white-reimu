@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
+from itertools import product, chain
 from typing import List
 
+from mahjong.record.utils.constant import TENHOU_TILE_CATEGORY
 from .utils.event import is_game_init, is_open_hand, is_dora_indicator_event, discard_value
 from .player import TenhouPlayer
 from .utils.value.general import number_list
@@ -169,28 +171,34 @@ class DoraIndicators(GameState):
 
 
 class InvisibleTiles(GameState):
-    def __init__(self, invisible_tiles=None):
+    def __init__(self, player_num, invisible_tiles=None):
         if invisible_tiles is None:
-            invisible_tiles = set(range((3 * 9 + 7) * 4))
+            tile_total = len(TENHOU_TILE_CATEGORY)
+            if player_num == 4:
+                invisible_tiles = set(range(tile_total))
+            elif player_num == 3:
+                color_1m_9m = ((0, num, i) for num, i in product([1 - 1, 9 - 1], range(4)))
+                others = range(TENHOU_TILE_CATEGORY.index((1, 0, 0)), tile_total)
+                invisible_tiles = set(chain(color_1m_9m, others))
         self._invisible_tiles = invisible_tiles
+        self._player_num = player_num
 
     def scan(self, event) -> GameState:
         if is_game_init(event):
-            brand = InvisibleTiles()
-            dora = DoraIndicators().scan(event).value
-            brand._invisible_tiles.remove(dora)
+            brand = InvisibleTiles(self._player_num)
+            dora_indicator = DoraIndicators().scan(event).value
+            brand._invisible_tiles.remove(dora_indicator)
             return brand
 
         discard_val = discard_value(event)
         if discard_val:
-            return InvisibleTiles(self._invisible_tiles - {discard_val})
+            return InvisibleTiles(self._player_num, self._invisible_tiles - {discard_val})
         elif is_open_hand(event):
-            return InvisibleTiles(self._invisible_tiles - set(meld_from(event).self_tiles))
+            return InvisibleTiles(self._player_num, self._invisible_tiles - set(meld_from(event).self_tiles))
         elif is_dora_indicator_event(event):
-            return InvisibleTiles(self._invisible_tiles - {DoraIndicators().scan(event).value})
+            return InvisibleTiles(self._player_num, self._invisible_tiles - {DoraIndicators().scan(event).value})
         return self
 
     @property
     def value(self):
         return self._invisible_tiles
-
