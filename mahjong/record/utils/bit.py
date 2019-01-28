@@ -17,4 +17,12 @@ def named_tuple_from_desc(type_name, desc_str):
 
 
 def unpack_with(data_class, unpacker, value):
-    return data_class(*unpacker.unpack(struct.pack(">H", int(value))))
+    return data_class(*unpacker.unpack(to_bit_bytes(value)))
+
+
+def repack_to(unpacker, value_list):
+    return struct.unpack(">H", unpacker.pack(*value_list))
+
+def to_bit_bytes(value):
+    packed_bytes = struct.pack(">H", int(value))
+    return packed_bytes

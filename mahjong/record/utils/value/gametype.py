@@ -1,4 +1,4 @@
-from ..bit import bit_struct_from_desc, named_tuple_from_desc, unpack_with
+from ..bit import bit_struct_from_desc, named_tuple_from_desc, unpack_with, repack_to
 
 game_type_desc = """
 preserved:u1
@@ -31,9 +31,12 @@ def _pick(values, true_left, default=""):
 
 class GameType:
     def __init__(self, type_data):
+        self.origin = int(type_data)
         self.data = unpack_with(GameTypeData, game_type_packer, type_data)
-        self.data.preserved = 0
-        self.data.padding_ = 0
+        listed = list(self.data)
+        listed[0] = 0
+        listed[-1] = 0
+        self.standard_code = repack_to(game_type_packer, listed)
 
     def player_count(self) -> int:
         return 3 if self.data.three_players else 4
@@ -71,7 +74,7 @@ class GameType:
         return self.data.show_discard_shadow
 
     def __eq__(self, other):
-        return self.data == other.data
+        return self.standard_code == other.standard_code
 
     def __str__(self) -> str:
         return "%s%s%s%s%s%s%s%s" % (
