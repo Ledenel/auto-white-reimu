@@ -18,8 +18,6 @@ class Waiting:
                 if (ignore_4counts and all(v <= 4 for v in added_hand.values())) and self.win_pattern.match(added_hand):
                     return need_tiles - 1
 
-        return min(self.before_waiting_step(hand + TileSet([tile])) for tile in TileDistribution.ALL_TILES) + 1
-
     def useful_tiles(self, hand: TileSet, ignore_4counts=True):
         self_waiting = self.before_waiting_step(hand)
         return list(tile for tile in TileDistribution.ALL_TILES if
