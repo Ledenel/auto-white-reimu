@@ -2,7 +2,7 @@ from collections import Counter, defaultdict
 from time import perf_counter
 
 from mahjong.container.distribution import TileDistribution, StaticWall
-from mahjong.container.pattern.win import NormalTypeWin
+from mahjong.container.pattern.win import NormalTypeWin, UniquePairs
 from mahjong.container.set import TileSet
 from mahjong.container.utils import tile_set_from_string
 
@@ -29,9 +29,9 @@ if __name__ == '__main__':
 
     normal_win = NormalTypeWin()
 
-    seven_pair = NormalTypeWin(melds=0, pairs=7)
+    seven_pair = UniquePairs()
 
-    win_patterns = [normal_win]  # , seven_pair]
+    win_patterns = [normal_win, seven_pair]
 
     avg_win_counter = Counter()
 
