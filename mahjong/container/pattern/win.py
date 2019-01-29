@@ -79,8 +79,28 @@ class WinPattern(metaclass=ABCMeta):
     def need_count(self) -> int:
         pass
 
+    @abstractmethod
+    def max_unit_length(self) -> int:
+        pass
+
+    @abstractmethod
+    def need_units(self) -> int:
+        pass
+
 
 class NormalTypeWin(WinPattern):
+    def need_units(self) -> int:
+        return self._pairs + self._melds
+
+    def max_unit_length(self) -> int:
+        return 3 if self._melds > 0 else 2
+
+    def __str__(self):
+        return "melds=%d, pairs=%d" % (self._melds, self._pairs)
+
+    def __repr__(self):
+        return "<%s>" % str(self)
+
     def __init__(self, pairs: int = 1, melds: int = 4):
         super().__init__()
         self._pairs = pairs
@@ -105,6 +125,9 @@ class NormalTypeWin(WinPattern):
 
 
 class UniquePairs(WinPattern):
+    def max_unit_length(self) -> int:
+        return 2
+
     def __init__(self, pairs: int = 7, used: Set[Tile] = None):
         super().__init__()
         if used is None:
@@ -121,3 +144,6 @@ class UniquePairs(WinPattern):
 
     def need_count(self) -> int:
         return self._pairs * 2
+
+    def need_units(self) -> int:
+        return self._pairs
