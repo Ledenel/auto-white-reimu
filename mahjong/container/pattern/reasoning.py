@@ -119,12 +119,10 @@ class HeuristicPatternMatchWaiting(Waiting):
         return min(result_iter) - 1
 
     def useful_tiles(self, hand: TileSet, ignore_4counts=True):
-        self.max_used_tiles = sum(hand.values())
-        waiting = self.before_waiting_step(hand)
-        return set(chain(*(tile_set.keys() for _, cnt, tile_set in
-                           self._win_selections_in_tiles(hand, ignore_4counts, self.win_pattern, borrowed_limit(hand),
-                                                         TileDistribution.ALL_TILES)
-                           if cnt == waiting)))
+        self_waiting = self.before_waiting_step(hand)
+        return set(tile for tile in TileDistribution.ALL_TILES if
+                   (ignore_4counts and hand[tile] < 4) and
+                   self.before_waiting_step(hand + TileSet([tile])) < self_waiting)
 
     def _win_selections_in_tiles(self, hand: TileSet, ignore_4counts, current_state: WinPattern,
                                  borrow_limits: TileSet, searching_start: List[Tile]):
