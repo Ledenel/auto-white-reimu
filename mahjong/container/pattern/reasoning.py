@@ -106,6 +106,12 @@ def borrowed_tile_count(hand):
     return sum((-hand).values())
 
 
+def need_to_borrow(hand: TileSet, unit: TileSet):
+    hand = hand.copy()
+    hand.subtract(unit)
+    return borrowed_tile_count(hand)
+
+
 class HeuristicPatternMatchWaiting(Waiting):
     def __init__(self, win_pattern: WinPattern):
         super().__init__(win_pattern)
@@ -114,8 +120,19 @@ class HeuristicPatternMatchWaiting(Waiting):
 
     def before_waiting_step(self, hand: TileSet, ignore_4counts=True):
         self.max_used_tiles = sum(hand.values())
+
+        borrow_count_list = [
+            ([need_to_borrow(hand, unit) if i == 0 else -need_to_borrow(hand, unit)
+              for i, (unit, _) in enumerate(self.win_pattern.next_states(tile))], tile)
+            for tile in TileDistribution.ALL_TILES
+        ]
+
+        borrow_count_list.sort()
+
+        heuristic_order = [tile for _, tile in borrow_count_list]
+
         result_iter = self._win_selections_in_tiles(hand, ignore_4counts, self.win_pattern, borrowed_limit(hand),
-                                                    TileDistribution.ALL_TILES)
+                                                    heuristic_order)
         return min(result_iter) - 1
 
     def useful_tiles(self, hand: TileSet, ignore_4counts=True):
@@ -142,7 +159,18 @@ class HeuristicPatternMatchWaiting(Waiting):
         hand = hand.copy()
         basic_hand_borrowed = borrowed_tile_count(hand)
 
-        for can_borrowed in range(current_state.max_unit_length() + 1):
+        for tile in hand:
+            for unit, state in current_state.next_states(tile):
+                if basic_hand_borrowed <= self.max_used_tiles:
+                        hand_temp = hand.copy()
+                        hand_temp.subtract(unit)
+                        if borrowed_tile_count(hand_temp) - basic_hand_borrowed == 0:
+                            yield from (cnt for cnt in self._win_selections_in_tiles(hand_temp, ignore_4counts, state,
+                                                                                     borrow_limits,
+                                                                                     searching_start))
+                else:
+                    return
+        for can_borrowed in range(1, current_state.max_unit_length() + 1):
             min_used_tiles = current_state.need_units() * can_borrowed
             searching_round = searching_start.copy()
             hand_round = hand.copy()
