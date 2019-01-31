@@ -9,3 +9,10 @@ def tile_from_tenhou(index):
     """
     color, number, _ = TENHOU_TILE_CATEGORY.category(index)
     return Tile(number + 1, SUIT_ORDER[color])
+
+
+def tile_to_tenhou_range(tile: Tile):
+    color = SUIT_ORDER.index(tile.color)
+    number = tile.number - 1
+    start_tile, end_tile = (TENHOU_TILE_CATEGORY.index(t) for t in [(color, number, 0), (color, number, 3)])
+    return range(start_tile, end_tile + 1)

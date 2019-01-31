@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Record Checker Result</title>
+    <style type="text/css">
+        .tile {
+            font-size: 36px;
+        }
+
+        .wrong-warning {
+            background-color: rgba(255, 0, 0, {{ round.wrong_rate * 100 }});
+        }
+
+        .game-caption {
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+
+<p class="tile">🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡</p>
+
+<p> Player: {{ player }} </p>
+<p><a href="{{ log_url }}">Record Link</a></p>
+
+{% for game in games %}
+    <div>
+        <details open>
+            <summary><span class="game-caption">{{ game.name }}</span></summary>
+            <table>
+                <tr>
+                    <th>Round <br>(巡目)</th>
+                    <th>Hand <br>(手牌)</th>
+                    <th>Your Choice <br>(你的选择)</th>
+                    <th>Expected Choice <br>(期望选择)</th>
+                    <th>Reasoning <br>(牌理)</th>
+                </tr>
+                {% for round in game.rounds %}
+                    <tr class="wrong-warning">
+                        <td>{{ loop.index }}</td>
+                        <td class="tile">{{ round.hand }}</td>
+                        <td class="tile">{{ round.your_choice_reasoning.discard_tile }}</td>
+                        <td class="tile">{{ round.expected_reasoning.discard_tile }}</td>
+                        <td>
+                            <details>
+                                <summary>
+                                    Expected: Steps {{ round.expected_reasoning.waiting_step }}
+                                    Tiles {{ round.expected_reasoning.useful_tiles_count }},
+                                    Actual: Steps {{ round.your_choice_reasoning.waiting_step }}
+                                    Tiles {{ round.your_choice_reasoning.useful_tiles_count }}
+                                </summary>
+                                {% for reasoning in round.reasonings %}
+                                    <div>Discard{{ reasoning.discard_tile }}
+                                        Expect <span>{{ reasoning.useful_tiles }}</span>,
+                                        {{ reasoning.waiting_step }} Waiting Steps
+                                        {{ reasoning.useful_tiles_count }} Tiles
+                                    </div>
+                                {% endfor %}
+                            </details>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </details>
+    </div>
+{% endfor %}
+</body>
+</html>
