@@ -139,9 +139,9 @@ class HeuristicPatternMatchWaiting(Waiting):
         borrowed_count_map = {borrow_count: list(group) for borrow_count, group in groupby(units, lambda x: x[0])}
 
         borroweds = [
-            sorted(unique(tile
-                          for i in range(searching_borrow, -1, -1)
-                          for _, tile, _ in borrowed_count_map[i]))
+            sorted(set(tile
+                       for i in range(searching_borrow, -1, -1)
+                       for _, tile, _ in borrowed_count_map[i]))
             for searching_borrow in range(self.win_pattern.max_unit_length() + 1)
         ]
 
@@ -159,19 +159,19 @@ class HeuristicPatternMatchWaiting(Waiting):
 
     def _win_selections_in_tiles(self, hand: TileSet, ignore_4counts, current_state: WinPattern,
                                  borrow_limits: TileSet, searching_group: List[List[Tile]], borrowed_stage):
-        if borrowed_tile_count(hand) > self.max_used_tiles:
-            return
+        # if borrowed_tile_count(hand) > self.max_used_tiles:
+        #     return
         if ignore_4counts and not all(cnt >= borrow_limits[tile] for tile, cnt in hand.items()):
             return
         if current_state.has_win():
             borrowed = TileSet(-hand)
             borrowed_count = sum(borrowed.values())
-            self.max_used_tiles = borrowed_count - 1
-            logging.debug("found borrowing %s" % TileSet(-hand))
+            self.max_used_tiles = borrowed_count
+            logging.debug("found borrowing %s", TileSet(-hand))
             yield borrowed_count
             return
-        if current_state.need_count() > sum((+hand).values()) + self.max_used_tiles:
-            return
+        # if current_state.need_count() > sum((+hand).values()) + self.max_used_tiles:
+        #     return
 
         hand = hand.copy()
         basic_hand_borrowed = borrowed_tile_count(hand)
@@ -187,19 +187,19 @@ class HeuristicPatternMatchWaiting(Waiting):
             for tile in searching_round.copy():
                 for unit, state in current_state.next_states(tile):
                     if basic_hand_borrowed + min_used_tiles <= self.max_used_tiles:
-                        logging.debug("test %s in %s at borrow stage %d" % (unit, hand, can_borrowed))
+                        logging.debug("test %s in %s at borrow stage %d", unit, hand, can_borrowed)
                         hand_temp = hand_round.copy()
                         hand_temp.subtract(unit)
                         borrowed_new = borrowed_tile_count(hand_temp)
                         if borrowed_new - basic_hand_borrowed == can_borrowed:
-                            logging.debug("search %s in %s borrowed %s" % (unit, hand, TileSet(-hand)))
+                            logging.debug("search %s in %s borrowed %s", unit, hand, TileSet(-hand))
                             yield from (cnt for cnt in
                                         self._win_selections_in_tiles(hand_temp, ignore_4counts, state,
                                                                       borrow_limits,
                                                                       temp_searching_group, can_borrowed))
                     else:
-                        logging.debug("%s plan to borrowing out of range %d" % (
-                            hand,
-                            self.max_used_tiles - basic_hand_borrowed))
+                        logging.debug("%s plan to borrowing out of range %d",
+                                      hand,
+                                      self.max_used_tiles - basic_hand_borrowed)
                         return
                 searching_round.remove(tile)
