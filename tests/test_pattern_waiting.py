@@ -1,6 +1,6 @@
 import pytest
 
-from mahjong.container.pattern.reasoning import PatternMatchWaiting, HeuristicPatternMatchWaiting
+from mahjong.container.pattern.reasoning import PatternMatchWaiting
 from mahjong.container.pattern.win import NormalTypeWin
 from mahjong.container.set import TileSet
 from mahjong.container.utils import tile_set_from_string
