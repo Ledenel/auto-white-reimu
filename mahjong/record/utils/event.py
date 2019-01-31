@@ -13,6 +13,14 @@ def is_dora_indicator_event(event):
     return event.tag == "DORA"
 
 
+def is_somebody_win_game(event):
+    return event.tag == "AGARI"
+
+
+def is_nobody_win_game(event):
+    return event.tag == "RYUUKYOKU"
+
+
 def draw_value(event):
     matched = DRAW_ALL_REGEX.match(event.tag)
     if matched:

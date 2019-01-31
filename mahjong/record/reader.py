@@ -3,14 +3,17 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 from argparse import Namespace
 from functools import reduce
+from itertools import groupby
+from typing import List
 from urllib.parse import urlparse, parse_qs
 
 import requests
 
+from mahjong.record.category import SubCategory
 from .stage import StageGroupby
 from .player import TenhouPlayer
-from .utils.constant import API_URL_TEMPLATE
-from .utils.event import is_game_init
+from .utils.constant import API_URL_TEMPLATE, DRAWN_TYPES
+from .utils.event import is_game_init, is_nobody_win_game, is_somebody_win_game
 from .utils.value.gametype import GameType
 from .utils.value.general import number_list
 
@@ -34,22 +37,65 @@ def log_id_from_url(view_url):
 
 
 class TenhouGame:
-    def __init__(self, game_events):
+    def __init__(self, game_events, game_type: GameType, players: List[TenhouPlayer]):
+        self.players = players
         init, *playing = game_events
+        _, end = (list(g) for _, g in
+                  groupby(playing, lambda event: is_somebody_win_game(event) or is_nobody_win_game(event)))
+        self.end_events = end
         self._meta = list_of_xml_configs([init])
         self._end_meta = list_of_xml_configs([game_events[-1]])
         self.events = game_events
         self.playing = playing
+        self.game_type = game_type
+        self.seeds = number_list(self._meta.INIT.seed)
+        self.east_index = int(self._meta.INIT.oya)
+        self.prevailing_and_game = SubCategory(
+            self.game_type.play_wind_count(), 4, caption="prevailing_and_game",
+            names=["prevailing", "game_index"]
+        )
 
+    def game_index(self):
+        return self.prevailing_and_game.category(self.seeds[0])
 
-"""
-http://tenhou.net/0/?log=2018110323gm-0009-0000-e81b9df3&tw=1
-http://tenhou.net/0/?log=2012060420gm-0009-10011-acfd4b57
-4f:http://tenhou.net/0/?log=2019011500gm-00a9-0000-297d5c4d
-3f:http://tenhou.net/0/?log=2019011500gm-00b9-0000-3065ca3c
+    def sub_game_index(self):
+        return self.seeds[1]
 
-4f-disconnected:http://tenhou.net/0/?log=2019012301gm-00a9-0000-420858f6&tw=0&tdsourcetag=s_pcqq_aiomsg
-"""
+    def richii_counts(self):
+        return self.seeds[2]
+
+    def end_stringify(self, event):
+        if is_somebody_win_game(event):
+            who, from_who = (int(event.attrib[s]) for s in ['who', 'fromWho'])
+            score = number_list(event.attrib['ten'])[1]
+            if who == from_who:
+                return r"%s:ツモ(%d)" % (
+                    self.players[who].name,
+                    score
+                )
+            else:
+                return "%s<-%s:ロン(%d)" % (
+                    self.players[who].name,
+                    self.players[from_who].name,
+                    score
+                )
+        elif is_nobody_win_game(event):
+            type_of_draw = ""
+            if "type" in event.attrib:
+                type_of_draw = DRAWN_TYPES[event.attrib["type"]]
+            return " ".join([r"流局", type_of_draw])
+
+    def __str__(self):
+        prevailing, game_index = self.game_index()
+        return "%s%d局%d本 %s" % (
+            "東南西北"[prevailing],
+            game_index + 1,
+            self.sub_game_index(),
+            ",".join(self.end_stringify(e) for e in self.end_events)
+        )
+
+    def __repr__(self):
+        return "<%s>" % self
 
 
 def xml_message_config_scan(namespace: Namespace, message):
@@ -66,8 +112,8 @@ class TenhouRecord:
         self.events = events
         head_events, *game_chunks = list(list(g) for _, g in StageGroupby(events, True, False, key=is_game_init))
         self._meta = list_of_xml_configs(head_events)
-        self._end_meta = list_of_xml_configs([events[-1]])
-        self.game_list = [TenhouGame(item) for item in game_chunks]
+        end_event = events[-1]
+        self._end_meta = list_of_xml_configs([end_event])
 
         meta = self._meta
         self.game_type = GameType(meta.GO.type)
@@ -82,6 +128,26 @@ class TenhouRecord:
                 meta.UN.sx.split(',')
             )
         ]
+        self.game_list = [TenhouGame(item, self.game_type, self.players) for item in game_chunks]
+        end_infos = number_list(end_event.attrib['owari'])
+        steps = 2
+        self.end_score, self.end_point = (end_infos[i::steps] for i in range(steps))
+
+    def __str__(self) -> str:
+        player_scores = list(zip(self.players, self.end_score, self.end_point))
+        player_scores.sort(key=lambda item: item[1], reverse=True)
+        return "%s %s" % (
+            self.game_type,
+            ",".join(
+                "%d位:%s(%.1f)" % (
+                    i + 1, player.name, end_point
+                )
+                for i, (player, end_score, end_point) in enumerate(player_scores)
+            )
+        )
+
+    def __repr__(self):
+        return "<%s>" % self
 
 
 def from_url(url: str) -> TenhouRecord:

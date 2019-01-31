@@ -80,7 +80,7 @@ class GameType:
         return "%s%s%s%s%s%s%s%s" % (
             "零一二三四"[self.player_count()],
             _pick(["若銀琥孔", "般上特鳳"], self.with_tips())[self.play_level()],
-            "_東南"[self.play_wind_count()],
+            "_東南西北"[self.play_wind_count()],
             _pick("喰", self.allow_tanyao_open()),
             _pick("赤", self.has_aka_dora()),
             _pick("速", self.speed_up()),
