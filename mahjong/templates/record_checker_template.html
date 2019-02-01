@@ -34,7 +34,7 @@
                     <th>Reasoning <br>(牌理)</th>
                 </tr>
                 {% for round in game.rounds %}
-                    <tr style="background-color: rgba(255, 0, 0, {{ round.wrong_rate * 100 }});">
+                    <tr style="background-color: {% if round.somebody_richii %} rgba(0, 0, 255, {% else %} rgba(255, 0, 0, {% endif %}{{ round.wrong_rate }});">
                         <td>{{ loop.index }}</td>
                         <td class="tile">{{ round.hand }}</td>
                         <td class="tile">{{ round.your_choice_reasoning.discard_tile }}</td>
@@ -51,13 +51,25 @@
                                     Actual: Steps {{ round.your_choice_reasoning.waiting_step }}
                                     Tiles {{ round.your_choice_reasoning.useful_tiles_count }}
                                 </summary>
-                                {% for reasoning in round.normal_reasonings %}
+                                {% for reasoning in round.merged_reasoning %}
                                     <div>Discard{{ reasoning.discard_tile }}
                                         Expect <span>{{ reasoning.useful_tiles }}</span>,
                                         {{ reasoning.waiting_step }} Waiting Steps
                                         {{ reasoning.useful_tiles_count }} Tiles
                                     </div>
                                 {% endfor %}
+                                <details>
+                                    <summary>
+                                        Normal-Type Reasoning
+                                    </summary>
+                                    {% for reasoning in round.normal_reasonings %}
+                                        <div>Discard{{ reasoning.discard_tile }}
+                                            Expect <span>{{ reasoning.useful_tiles }}</span>,
+                                            {{ reasoning.waiting_step }} Waiting Steps
+                                            {{ reasoning.useful_tiles_count }} Tiles
+                                        </div>
+                                    {% endfor %}
+                                </details>
                                 <details>
                                     <summary>
                                         Seven-Pair Reasoning

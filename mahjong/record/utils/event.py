@@ -13,6 +13,10 @@ def is_dora_indicator_event(event):
     return event.tag == "DORA"
 
 
+def is_richii(event):
+    return event.tag == "REACH"
+
+
 def is_somebody_win_game(event):
     return event.tag == "AGARI"
 

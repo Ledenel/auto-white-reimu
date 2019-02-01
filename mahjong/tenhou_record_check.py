@@ -2,6 +2,7 @@
 
 import logging
 import operator as op
+import os
 from functools import reduce
 from itertools import groupby
 from typing import Set, List, Callable, TypeVar, Optional
@@ -13,6 +14,7 @@ from mahjong.container.pattern.win import NormalTypeWin, UniquePairs
 from mahjong.container.set import TileSet
 from mahjong.record.reader import from_url, log_id_from_url
 from mahjong.record.state import PlayerHand, InvisibleTiles, PlayerMeld
+from mahjong.record.utils import event
 from mahjong.record.utils.value.meld import Kita
 from mahjong.record.utils.value.tile import tile_from_tenhou, tile_to_tenhou_range
 from mahjong.tile.definition import Tile
@@ -35,10 +37,16 @@ class ReasoningItem:
         self.useful_tiles = useful_tiles
         self.useful_tiles_count = useful_tiles_count
 
+    def norm(self):
+        self.useful_tiles = sorted(self.useful_tiles)
+
 
 class RoundReasoning:
     def __init__(self, hand: TileSet, your_choice_reasoning: ReasoningItem,
-                 expected_reasonings: List[ReasoningItem], wrong_rate: float):
+                 expected_reasonings: List[ReasoningItem], merged_reasoning: List[ReasoningItem], wrong_rate: float,
+                 somebody_richii: bool):
+        self.merged_reasoning = merged_reasoning
+        self.somebody_richii = somebody_richii
         self.wrong_rate = wrong_rate
         self.hand = hand
         self.your_choice_reasoning = your_choice_reasoning
@@ -94,13 +102,16 @@ def main():
 
     games = [GameAnalysis(str(game), game_reason_list(game, player, record)) for game in record.game_list]
 
-    with open("tenhou_record_%s_%s.html" % (log_id_from_url(log_url), player.name), "w+", encoding='utf-8') as result_file:
+    file_name = "tenhou_record_%s_%s.html" % (log_id_from_url(log_url), player.name)
+    with open(file_name, "w+", encoding='utf-8') as result_file:
         result_file.write(template.render(
             player=str(player),
             record=str(record),
             log_url=log_url,
             games=games
         ))
+
+    print("report has been saved to", os.path.abspath(file_name))
 
 
 def game_reason_list(game, player, record):
@@ -111,12 +122,16 @@ def game_reason_list(game, player, record):
 
 
 def game_reasoning(game, hand_state, invisible_tiles_state, player, player_meld_state):
+    somebody_richii = False
     for discarded, g in groupby(game.events, lambda e: player.is_discard(e)):
         round_of_game = list(g)
         discard_event = round_of_game[0]
+        somebody_richii = somebody_richii or any(event.is_richii(e) for e in round_of_game)
         if discarded:
             # TODO reasoning
-            yield discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, player_meld_state)
+            reasoning = discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, player_meld_state)
+            reasoning.somebody_richii = somebody_richii
+            yield reasoning
         hand_state = hand_state.passed_events(round_of_game)
         invisible_tiles_state = invisible_tiles_state.passed_events(round_of_game)
         player_meld_state = player_meld_state.passed_events(round_of_game)
@@ -148,7 +163,25 @@ def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, 
     for win_reasoning in win_reasonings:
         win_reasoning.sort(key=reasoning_key)
     # TODO add wrong rate for reason display.
-    round_reasoning = RoundReasoning(hand, your_choice_reasoning, expected_reasonings, 0)
+    expect_shanten, expect_counts = reasoning_key(expected_reasonings[0])
+    your_shanten, your_counts = reasoning_key(your_choice_reasoning)
+    expect_counts = -expect_counts
+    your_counts = -your_counts
+    shanten_sequence_count = len(invisible_player_perspective) ** (your_shanten - expect_shanten)
+    base = expect_counts * shanten_sequence_count
+    # print("base=", base, "expect_counts=", expect_counts, "your_counts=", your_counts)
+
+    correct_rate = your_counts / base
+    wrong_rate = 1 - correct_rate
+    # print("correct=", correct_rate, "wrong=", wrong_rate)
+
+    your_choice_reasoning.norm()
+    for item in expected_reasonings:
+        item.norm()
+    for item in merged_win_reasonings:
+        item.norm()
+    round_reasoning = RoundReasoning(hand, your_choice_reasoning, expected_reasonings, merged_win_reasonings,
+                                     wrong_rate, False)
 
     print("reasoned", hand)
 

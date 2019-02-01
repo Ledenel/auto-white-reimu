@@ -18,7 +18,7 @@ class TileSet(Counter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def contains(self, tiles: TileSet):
+    def contains(self, tiles: TileSet) -> bool:
         for tile, count in tiles.items():
             if self[tile] < count:
                 return False
@@ -29,6 +29,10 @@ class TileSet(Counter):
             for tile, num in group:
                 yield str(tile.number) * num
             yield key
+
+    def tiles(self):
+        for tile, num in self.items():
+            yield from [tile] * num
 
     def exclude(self, other):
         if self.contains(other):
@@ -64,5 +68,3 @@ class TileSet(Counter):
 
     def __or__(self, other) -> TileSet:
         return TileSet(super().__or__(other))
-
-

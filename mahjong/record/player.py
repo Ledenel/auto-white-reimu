@@ -1,6 +1,6 @@
 from urllib.parse import unquote
 
-from .utils.constant import DRAW_REGEX, DISCARD_REGEX
+from .utils.constant import DRAW_REGEX, DISCARD_REGEX, RANKS
 from .utils.value.meld import meld_from
 
 
@@ -16,6 +16,13 @@ class TenhouPlayer:
         self.level = level
         self.name = unquote(name_encoded)
         self.index = index
+
+    def __str__(self):
+        return "%s %s R%.2f" % (
+            self.name,
+            RANKS[self.level],
+            self.rate
+        )
 
     def clear(self):
         pass
