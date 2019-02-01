@@ -1,5 +1,6 @@
 import logging
 from abc import ABCMeta, abstractmethod
+from collections import defaultdict
 from itertools import count, product, chain, groupby
 from typing import List
 
@@ -138,7 +139,10 @@ class HeuristicPatternMatchWaiting(Waiting):
         units = [(need_to_borrow(hand, unit), tile, unit) for tile in
                  TileDistribution.ALL_TILES for unit, _ in self.win_pattern.next_states(tile)]
         units.sort()
-        borrowed_count_map = {borrow_count: list(group) for borrow_count, group in groupby(units, lambda x: x[0])}
+        borrowed_count_map = defaultdict(
+            list,
+            {borrow_count: list(group) for borrow_count, group in groupby(units, lambda x: x[0])}
+        )
         borrows = [
             sorted(set(tile
                        for i in range(searching_borrow, -1, -1)

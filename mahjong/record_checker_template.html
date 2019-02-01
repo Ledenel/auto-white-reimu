@@ -21,10 +21,10 @@
 
 <p class="tile">🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡</p>
 
-<p> Player: {{ player }} </p>
-<p><a href="{{ log_url }}">Record Link</a></p>
+<p> Player: {{ record.player }} </p>
+<p>{{ record }} <a href="{{ record.log_url }}">Link</a></p>
 
-{% for game in games %}
+{% for game in record.games %}
     <div>
         <details open>
             <summary><span class="game-caption">{{ game.name }}</span></summary>
@@ -50,14 +50,27 @@
                                     Actual: Steps {{ round.your_choice_reasoning.waiting_step }}
                                     Tiles {{ round.your_choice_reasoning.useful_tiles_count }}
                                 </summary>
-                                {% for reasoning in round.reasonings %}
+                                {% for reasoning in round.normal_reasonings %}
                                     <div>Discard{{ reasoning.discard_tile }}
                                         Expect <span>{{ reasoning.useful_tiles }}</span>,
                                         {{ reasoning.waiting_step }} Waiting Steps
                                         {{ reasoning.useful_tiles_count }} Tiles
                                     </div>
                                 {% endfor %}
+                                <details>
+                                    <summary>
+                                        Seven-Pair Reasoning
+                                    </summary>
+                                    {% for reasoning in round.seven_pair_reasonings %}
+                                        <div>Discard{{ reasoning.discard_tile }}
+                                            Expect <span>{{ reasoning.useful_tiles }}</span>,
+                                            {{ reasoning.waiting_step }} Waiting Steps
+                                            {{ reasoning.useful_tiles_count }} Tiles
+                                        </div>
+                                    {% endfor %}
+                                </details>
                             </details>
+
                         </td>
                     </tr>
                 {% endfor %}

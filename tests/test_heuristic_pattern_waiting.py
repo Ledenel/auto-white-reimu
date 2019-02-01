@@ -1,7 +1,7 @@
 import pytest
 
 from mahjong.container.pattern.reasoning import HeuristicPatternMatchWaiting
-from mahjong.container.pattern.win import NormalTypeWin
+from mahjong.container.pattern.win import NormalTypeWin, UniquePairs
 from mahjong.container.set import TileSet
 from mahjong.container.utils import tile_set_from_string
 
@@ -13,6 +13,16 @@ hands = [
     "79m899p24668s256z",
     "79m899p246689s56z",
     "1115555s456m111z",
+]
+
+seven_pair_shantens = [
+    1,
+    1,
+    4,
+    4,
+    4,
+    4,
+    4
 ]
 
 shantens = [
@@ -40,6 +50,12 @@ usefuls = [
 def test_heuristic_waiting_step(hand, shanten):
     assert HeuristicPatternMatchWaiting(NormalTypeWin
                                         ()).before_waiting_step(tile_set_from_string(hand)) \
+           == shanten
+
+
+@pytest.mark.parametrize("hand,shanten", zip(hands, seven_pair_shantens))
+def test_heuristic_seven_pair_waiting_step(hand, shanten):
+    assert HeuristicPatternMatchWaiting(UniquePairs()).before_waiting_step(tile_set_from_string(hand)) \
            == shanten
 
 
