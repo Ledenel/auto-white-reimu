@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
+from functools import reduce
 from itertools import product, chain
-from typing import List
+from typing import List, Iterator
 
 from mahjong.record.utils.constant import TENHOU_TILE_CATEGORY
 from .utils.event import is_game_init, is_open_hand, is_dora_indicator_event, discard_value
@@ -25,13 +26,16 @@ class GameState(metaclass=ABCMeta):
     def is_key_event(self, event) -> bool:
         return self.scan(event) != self
 
-    def with_events(self, events):
+    def with_events(self, events) -> Iterator[GameState]:
         initial_state = self
         for event in events:
             initial_state = initial_state.scan(event)
             yield initial_state
 
-    def with_key_events(self, events):
+    def passed_events(self, events) -> GameState:
+        return reduce(lambda x, y: y, self.with_key_events(events), self)
+
+    def with_key_events(self, events) -> Iterator[GameState]:
         initial_state = self
         for event in events:
             if self.is_key_event(event):
@@ -83,13 +87,6 @@ class PlayerHand(GameState):
             return PlayerHand(self._player, self.hand - meld.self_tiles)
         return self
 
-    def is_key_event(self, event):
-        player = self._player
-        return is_game_init(event) \
-               or player.is_discard(event) \
-               or player.is_draw(event) \
-               or player.is_open_hand(event)
-
 
 class PlayerMeld(GameState):
     def __init__(self, player: TenhouPlayer, meld_list=None) -> None:
@@ -129,7 +126,7 @@ class DiscardTiles(GameState):
         if self._player.is_discard(event):
             return DiscardTiles(self._player, self._discard_tiles + [self._player.discard_tile_index(event)])
         elif is_game_init(event):
-            return DiscardTiles()
+            return DiscardTiles(self._player)
         return self
 
     @property
@@ -171,7 +168,7 @@ class DoraIndicators(GameState):
 
 
 class InvisibleTiles(GameState):
-    def __init__(self, player_num, invisible_tiles=None):
+    def __init__(self, player_num: int, invisible_tiles=None):
         if invisible_tiles is None:
             tile_total = len(TENHOU_TILE_CATEGORY)
             if player_num == 4:
@@ -187,7 +184,7 @@ class InvisibleTiles(GameState):
         if is_game_init(event):
             brand = InvisibleTiles(self._player_num)
             dora_indicator = DoraIndicators().scan(event).value
-            brand._invisible_tiles.remove(dora_indicator)
+            brand._invisible_tiles -= set(dora_indicator)
             return brand
 
         discard_val = discard_value(event)

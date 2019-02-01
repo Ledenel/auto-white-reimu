@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
+
+import logging
 import operator as op
 from functools import reduce
 from itertools import groupby
 from typing import Set, List, Callable, TypeVar, Optional
 
-import jinja2
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from mahjong.container.pattern.reasoning import HeuristicPatternMatchWaiting
@@ -36,7 +38,8 @@ class ReasoningItem:
 
 class RoundReasoning:
     def __init__(self, hand: TileSet, your_choice_reasoning: ReasoningItem,
-                 expected_reasonings: List[ReasoningItem]):
+                 expected_reasonings: List[ReasoningItem], wrong_rate: float):
+        self.wrong_rate = wrong_rate
         self.hand = hand
         self.your_choice_reasoning = your_choice_reasoning
         self.expected_reasonings = expected_reasonings
@@ -61,7 +64,7 @@ def reasoning_merge(reason_list: List[ReasoningItem], invisible_set: Set[int]) -
     tiles_reasoning_item = reduce(reduce_useful, reason_list)
     return ReasoningItem(reason_list[0].discard_tile,
                          min(item.waiting_step for item in reason_list), tiles_reasoning_item.useful_tiles,
-                         sum(len(set(tile_to_tenhou_range(tile)) | invisible_set)
+                         sum(len(set(tile_to_tenhou_range(tile)) & invisible_set)
                              for tile in tiles_reasoning_item.useful_tiles))
 
 
@@ -84,14 +87,14 @@ def main():
     if player is None:
         raise ValueError("Player '%s' not found in record %s." % (name, record))
     env = Environment(
-        loader=PackageLoader('yourapplication', 'templates'),
+        loader=PackageLoader('mahjong', 'templates'),
         autoescape=select_autoescape(['html', 'xml'])
     )
     template = env.get_template("record_checker_template.html")
 
     games = [GameAnalysis(str(game), game_reason_list(game, player, record)) for game in record.game_list]
 
-    with open("tenhou_record_%s_%s.html" % (log_id_from_url(log_url), player.name), "w") as result_file:
+    with open("tenhou_record_%s_%s.html" % (log_id_from_url(log_url), player.name), "w+", encoding='utf-8') as result_file:
         result_file.write(template.render(
             player=str(player),
             record=str(record),
@@ -103,7 +106,7 @@ def main():
 def game_reason_list(game, player, record):
     hand_state = PlayerHand(player)
     player_meld_state = PlayerMeld(player)
-    invisible_tiles_state = InvisibleTiles(player, len(record.players))
+    invisible_tiles_state = InvisibleTiles(len(record.players))
     return list(game_reasoning(game, hand_state, invisible_tiles_state, player, player_meld_state))
 
 
@@ -114,17 +117,16 @@ def game_reasoning(game, hand_state, invisible_tiles_state, player, player_meld_
         if discarded:
             # TODO reasoning
             yield discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, player_meld_state)
-
-        else:
-            hand_state = hand_state.with_events(round_of_game)
-            invisible_tiles_state = invisible_tiles_state.with_events(round_of_game)
-            player_meld_state = player_meld_state.with_events(round_of_game)
+        hand_state = hand_state.passed_events(round_of_game)
+        invisible_tiles_state = invisible_tiles_state.passed_events(round_of_game)
+        player_meld_state = player_meld_state.passed_events(round_of_game)
 
 
 def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, player_meld_state):
     invisible_player_perspective = invisible_tiles_state.value - set(hand_state.value)
     meld_count = sum(1 for meld in player_meld_state.value if not isinstance(meld, Kita))
     hand = TileSet(tile_from_tenhou(index) for index in hand_state.value)
+    print("reasoning", hand)
     win_types = [NormalTypeWin(melds=4 - meld_count)]
     reasoning_names = ["normal_reasonings", "seven_pair_reasonings"]
     if meld_count == 0:
@@ -145,7 +147,11 @@ def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, 
                                          key=lambda x: x.discard_tile == your_choice_tile)
     for win_reasoning in win_reasonings:
         win_reasoning.sort(key=reasoning_key)
-    round_reasoning = RoundReasoning(hand, your_choice_reasoning, expected_reasonings)
+    # TODO add wrong rate for reason display.
+    round_reasoning = RoundReasoning(hand, your_choice_reasoning, expected_reasonings, 0)
+
+    print("reasoned", hand)
+
     for name, win_reason in zip(reasoning_names, win_reasonings):
         setattr(round_reasoning, name, win_reason)
     return round_reasoning
@@ -155,7 +161,7 @@ def reasoning_discards(hand, invisible_player_perspective, tile, win):
     hand_temp = hand - TileSet([tile])
     reasoning = HeuristicPatternMatchWaiting(win)
     waiting_step, useful_tiles = reasoning.waiting_and_useful_tiles(hand_temp)
-    useful_tiles_count = sum(len(set(tile_to_tenhou_range(tile)) | invisible_player_perspective)
+    useful_tiles_count = sum(len(set(tile_to_tenhou_range(tile)) & invisible_player_perspective)
                              for tile in useful_tiles)
     return ReasoningItem(tile, waiting_step, useful_tiles, useful_tiles_count)
 
