@@ -12,6 +12,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 from mahjong.container.pattern.reasoning import HeuristicPatternMatchWaiting
 from mahjong.container.pattern.win import NormalTypeWin, UniquePairs
 from mahjong.container.set import TileSet
+from mahjong.record.category import MixedCategory, SubCategory
 from mahjong.record.reader import from_url, log_id_from_url
 from mahjong.record.state import PlayerHand, InvisibleTiles, PlayerMeld
 from mahjong.record.utils import event
@@ -29,6 +30,23 @@ def n_c_r(n, r):
     return n_a_r(n, r) / n_a_r(r, r)
 
 
+UNICODE_TILE_ORDER = "zmsp"
+
+UNICODE_HONOR_ORDER = [int(x) for x in "01234765"]
+
+TILE_CATEGORY = MixedCategory([SubCategory(7)] + ([SubCategory(9)] * 3))
+
+
+def to_unicode_tile(tile: Tile) -> str:
+    color = UNICODE_TILE_ORDER.index(tile.color)
+    if tile.color == 'z':
+        number = UNICODE_HONOR_ORDER[tile.number] - 1
+    else:
+        number = tile.number - 1
+    index = TILE_CATEGORY.index((color, number))
+    return chr(0x1f000 + index)
+
+
 class ReasoningItem:
     def __init__(self, discard_tile: Tile, waiting_step: int, useful_tiles: Set[Tile],
                  useful_tiles_count: int):
@@ -36,13 +54,17 @@ class ReasoningItem:
         self.waiting_step = waiting_step
         self.useful_tiles = useful_tiles
         self.useful_tiles_count = useful_tiles_count
+        self._normed = False
 
     def norm(self):
-        self.useful_tiles = sorted(self.useful_tiles)
+        if not self._normed:
+            self.discard_tile = to_unicode_tile(self.discard_tile)
+            self.useful_tiles = "".join(to_unicode_tile(x) for x in sorted(self.useful_tiles))
+            self._normed = True
 
 
 class RoundReasoning:
-    def __init__(self, hand: TileSet, your_choice_reasoning: ReasoningItem,
+    def __init__(self, hand: str, your_choice_reasoning: ReasoningItem,
                  expected_reasonings: List[ReasoningItem], merged_reasoning: List[ReasoningItem], wrong_rate: float,
                  somebody_richii: bool):
         self.merged_reasoning = merged_reasoning
@@ -180,12 +202,15 @@ def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, 
         item.norm()
     for item in merged_win_reasonings:
         item.norm()
-    round_reasoning = RoundReasoning(hand, your_choice_reasoning, expected_reasonings, merged_win_reasonings,
+    hand_str = ''.join(to_unicode_tile(x) for x in hand.tiles())
+    round_reasoning = RoundReasoning(hand_str, your_choice_reasoning, expected_reasonings, merged_win_reasonings,
                                      wrong_rate, False)
 
     print("reasoned", hand)
 
     for name, win_reason in zip(reasoning_names, win_reasonings):
+        for item in win_reason:
+            item.norm()
         setattr(round_reasoning, name, win_reason)
     return round_reasoning
 
