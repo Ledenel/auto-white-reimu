@@ -13,6 +13,7 @@ setup(
         'numpy',
         'bitstruct',
         'requests',
+        'Jinja2'
     ],
     setup_requires=[
         "pytest-runner"

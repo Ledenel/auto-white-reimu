@@ -8,9 +8,6 @@
             font-size: 36px;
         }
 
-        .wrong-warning {
-            background-color: rgba(255, 0, 0, {{ round.wrong_rate * 100 }});
-        }
 
         .game-caption {
             font-size: 24px;
@@ -21,10 +18,10 @@
 
 <p class="tile">🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡</p>
 
-<p> Player: {{ record.player }} </p>
-<p>{{ record }} <a href="{{ record.log_url }}">Link</a></p>
+<p> Player: {{ player }} </p>
+<p>{{ record }} <a href="{{ log_url }}">Link</a></p>
 
-{% for game in record.games %}
+{% for game in games %}
     <div>
         <details open>
             <summary><span class="game-caption">{{ game.name }}</span></summary>
@@ -37,16 +34,20 @@
                     <th>Reasoning <br>(牌理)</th>
                 </tr>
                 {% for round in game.rounds %}
-                    <tr class="wrong-warning">
+                    <tr style="background-color: rgba(255, 0, 0, {{ round.wrong_rate * 100 }});">
                         <td>{{ loop.index }}</td>
                         <td class="tile">{{ round.hand }}</td>
                         <td class="tile">{{ round.your_choice_reasoning.discard_tile }}</td>
-                        <td class="tile">{{ round.expected_reasoning.discard_tile }}</td>
+                        <td class="tile">
+                            {% for reasoning in round.expected_reasonings %}
+                                {{ reasoning.discard_tile }}
+                            {% endfor %}
+                        </td>
                         <td>
                             <details>
                                 <summary>
-                                    Expected: Steps {{ round.expected_reasoning.waiting_step }}
-                                    Tiles {{ round.expected_reasoning.useful_tiles_count }},
+                                    Expected: Steps {{ round.expected_reasonings[0].waiting_step }}
+                                    Tiles {{ round.expected_reasonings[0].useful_tiles_count }},
                                     Actual: Steps {{ round.your_choice_reasoning.waiting_step }}
                                     Tiles {{ round.your_choice_reasoning.useful_tiles_count }}
                                 </summary>
