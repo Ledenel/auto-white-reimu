@@ -286,7 +286,7 @@ class KanFromTriplet(Kan):
 class Kita(TenhouMeld):
     @property
     def data_class(self):
-        return AddedKanData
+        return KitaData
 
     def __init__(self, who_index, value) -> None:
         super().__init__(who_index, value)
@@ -295,7 +295,7 @@ class Kita(TenhouMeld):
 
     @property
     def unpacker(self):
-        return added_kan_packer
+        return kita_packer
 
     @property
     def self_tiles(self):

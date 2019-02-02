@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from argparse import Namespace
 from functools import reduce
 from itertools import product, chain
-from typing import List, Iterator
+from typing import List, Iterator, Set
 
 from mahjong.record.utils.constant import TENHOU_TILE_CATEGORY
 from .utils.event import is_game_init, is_open_hand, is_dora_indicator_event, discard_value
@@ -65,7 +65,7 @@ class GameStateCollection(GameState):
 
 class PlayerHand(GameState):
     @property
-    def value(self):
+    def value(self) -> Set[int]:
         return self.hand
 
     def __init__(self, player: TenhouPlayer, hand=None):
@@ -114,7 +114,7 @@ class PlayerMeld(GameState):
         return self
 
     @property
-    def value(self):
+    def value(self) -> List[Meld]:
         return self._meld_list
 
     def is_key_event(self, event):
@@ -130,7 +130,7 @@ class DiscardTiles(GameState):
         return self
 
     @property
-    def value(self):
+    def value(self) -> List[int]:
         return self._discard_tiles
 
     def __init__(self, player: TenhouPlayer, discard_tiles=None):
@@ -160,7 +160,7 @@ class DoraIndicators(GameState):
         self._dora_indicators = dora_indicators
 
     @property
-    def value(self):
+    def value(self) -> List[int]:
         return self._dora_indicators
 
     def is_key_event(self, event):
@@ -197,5 +197,5 @@ class InvisibleTiles(GameState):
         return self
 
     @property
-    def value(self):
+    def value(self) -> Set[int]:
         return self._invisible_tiles
