@@ -341,7 +341,7 @@ def meld_type(data):
 
 
 def meld_from(event) -> Meld:
-    who = event.attrib['who']
+    who = int(event.attrib['who'])
     data = event.attrib['m']
     type_of = unpack_with(MeldTypeData, meld_type_unpacker, data)
 
