@@ -34,6 +34,9 @@ then, you can run the tools with
 `python mahjong/tenhou_record_check.py`
 
 then type your tenhou.net log url (like`http://tenhou.net/0/?log=2019012600gm-0089-0000-100908f0&tw=0`)
-and your tenhou.net Playing name(like`Ledenel`, **not the id you used to login tenhou.net and play**)
+
+
+and your tenhou.net Playing name(like`Ledenel`, **not the id you used to login tenhou.net and play**)   
+(you can remain this to empty to generate check result for **all players**)
 
 it will generate a html report for easy checking.

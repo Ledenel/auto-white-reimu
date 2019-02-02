@@ -111,29 +111,34 @@ def find_in_list(lst: List[T], key: Callable[[T], bool]) -> Optional[T]:
 
 def main():
     log_url = input('Input your tenhou.net log link:').strip()
-    name = input('Input your tenhou.net display name:').strip('\n')
+    name = input('Input your tenhou.net display name(default to check all players):').strip('\n')
     record = from_url(log_url, 10)
-    player = next((x for x in record.players if x.name == name), None)
-    if player is None:
-        raise ValueError("Player '%s' not found in record %s." % (name, record))
+    planned_players = record.players.copy()
+    if name.strip():
+        player = next((x for x in record.players if x.name == name), None)
+        if player is None:
+            raise ValueError("Player '%s' not found in record %s." % (name, record))
+        planned_players = [player]
     env = Environment(
         loader=FileSystemLoader('mahjong/templates'),
         autoescape=select_autoescape(['html', 'xml'])
     )
     template = env.get_template("record_checker_template.html")
 
-    games = [GameAnalysis(str(game), game_reason_list(game, player, record)) for game in record.game_list]
+    for player in planned_players:
 
-    file_name = "tenhou_record_%s_%s.html" % (log_id_from_url(log_url), player.name)
-    with open(file_name, "w+", encoding='utf-8') as result_file:
-        result_file.write(template.render(
-            player=str(player),
-            record=str(record),
-            log_url=log_url,
-            games=games
-        ))
+        games = [GameAnalysis(str(game), game_reason_list(game, player, record)) for game in record.game_list]
 
-    print("report has been saved to", os.path.abspath(file_name))
+        file_name = "tenhou_record_%s_%s.html" % (log_id_from_url(log_url), player.name)
+        with open(file_name, "w+", encoding='utf-8') as result_file:
+            result_file.write(template.render(
+                player=str(player),
+                record=str(record),
+                log_url=log_url,
+                games=games
+            ))
+
+        print("report has been saved to", os.path.abspath(file_name))
 
 
 def game_reason_list(game, player, record):
