@@ -111,7 +111,7 @@ def find_in_list(lst: List[T], key: Callable[[T], bool]) -> Optional[T]:
 def main():
     log_url = input('Input your tenhou.net log link:').strip()
     name = input('Input your tenhou.net display name:').strip('\n')
-    record = from_url(log_url)
+    record = from_url(log_url, 10)
     player = next((x for x in record.players if x.name == name), None)
     if player is None:
         raise ValueError("Player '%s' not found in record %s." % (name, record))
@@ -136,6 +136,7 @@ def main():
 
 
 def game_reason_list(game, player, record):
+    print("start game", game)
     hand_state = PlayerHand(player)
     player_meld_state = PlayerMeld(player)
     invisible_tiles_state = InvisibleTiles(len(record.players))

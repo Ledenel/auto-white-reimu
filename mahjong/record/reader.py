@@ -18,11 +18,11 @@ from .utils.value.gametype import GameType
 from .utils.value.general import number_list
 
 
-def fetch_record_content(url):
+def fetch_record_content(url, timeout=3):
     url = download_url(url)
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                              'Chrome/71.0.3578.98 Safari/537.36'}
-    return requests.get(url, timeout=3, headers=headers, allow_redirects=True).text
+    return requests.get(url, timeout=timeout, headers=headers, allow_redirects=True).text
 
 
 def download_url(view_url):
@@ -150,8 +150,8 @@ class TenhouRecord:
         return "<%s>" % self
 
 
-def from_url(url: str) -> TenhouRecord:
-    return TenhouRecord(ET.fromstring(fetch_record_content(url)))
+def from_url(url: str, timeout=3) -> TenhouRecord:
+    return TenhouRecord(ET.fromstring(fetch_record_content(url, timeout=timeout)))
 
 
 def from_file(file) -> TenhouRecord:

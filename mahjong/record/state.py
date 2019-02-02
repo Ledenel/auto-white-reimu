@@ -193,7 +193,7 @@ class InvisibleTiles(GameState):
         elif is_open_hand(event):
             return InvisibleTiles(self._player_num, self._invisible_tiles - set(meld_from(event).self_tiles))
         elif is_dora_indicator_event(event):
-            return InvisibleTiles(self._player_num, self._invisible_tiles - {DoraIndicators().scan(event).value})
+            return InvisibleTiles(self._player_num, self._invisible_tiles - set(DoraIndicators().scan(event).value))
         return self
 
     @property
