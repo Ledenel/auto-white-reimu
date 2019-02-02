@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import logging
 import operator as op
 import os
 from functools import reduce
 from itertools import groupby
 from typing import Set, List, Callable, TypeVar, Optional
 
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import Environment, select_autoescape, FileSystemLoader
 
 from mahjong.container.pattern.reasoning import HeuristicPatternMatchWaiting
 from mahjong.container.pattern.win import NormalTypeWin, UniquePairs
@@ -117,7 +116,7 @@ def main():
     if player is None:
         raise ValueError("Player '%s' not found in record %s." % (name, record))
     env = Environment(
-        loader=PackageLoader('mahjong', 'templates'),
+        loader=FileSystemLoader('mahjong/templates'),
         autoescape=select_autoescape(['html', 'xml'])
     )
     template = env.get_template("record_checker_template.html")
@@ -150,7 +149,6 @@ def game_reasoning(game, hand_state, invisible_tiles_state, player, player_meld_
         discard_event = round_of_game[0]
         somebody_richii = somebody_richii or any(event.is_richii(e) for e in round_of_game)
         if discarded:
-            # TODO reasoning
             reasoning = discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, player_meld_state)
             reasoning.somebody_richii = somebody_richii
             yield reasoning
