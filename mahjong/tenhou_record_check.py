@@ -63,9 +63,10 @@ class ReasoningItem:
 
 
 class RoundReasoning:
-    def __init__(self, hand: str, your_choice_reasoning: ReasoningItem,
+    def __init__(self, hand: str, melds: List[str], your_choice_reasoning: ReasoningItem,
                  expected_reasonings: List[ReasoningItem], merged_reasoning: List[ReasoningItem], wrong_rate: float,
                  somebody_richii: bool):
+        self.melds = melds
         self.merged_reasoning = merged_reasoning
         self.somebody_richii = somebody_richii
         self.wrong_rate = wrong_rate
@@ -201,9 +202,19 @@ def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, 
         item.norm()
     for item in merged_win_reasonings:
         item.norm()
+
     hand_str = ''.join(to_unicode_tile(x) for x in hand.tiles())
-    round_reasoning = RoundReasoning(hand_str, your_choice_reasoning, expected_reasonings, merged_win_reasonings,
-                                     wrong_rate, False)
+    meld_strs = [
+        ''.join(to_unicode_tile(tile_from_tenhou(x))
+                for x in list(meld.self_tiles) + list(meld.borrowed_tiles))
+        for meld in player_meld_state.value
+
+    ]
+    round_reasoning = RoundReasoning(
+        hand_str, meld_strs,
+        your_choice_reasoning, expected_reasonings, merged_win_reasonings,
+        wrong_rate, False
+    )
 
     print("reasoned", hand)
 

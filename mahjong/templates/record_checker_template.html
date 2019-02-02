@@ -7,7 +7,7 @@
         .tile {
             letter-spacing: -12px;
             font-size: 36px;
-            padding-right: 50px;
+            padding-right: 12px;
         }
 
         .tile-small {
@@ -76,7 +76,10 @@
                 {% for round in game.rounds %}
                     <tr style="background-color: {% if round.somebody_richii %} rgba(0, 0, 255, {% else %} rgba(255, 0, 0, {% endif %}{{ round.wrong_rate }});">
                         <td>{{ loop.index }}</td>
-                        <td class="tile">{{ round.hand }}</td>
+                        <td>
+                            {% for meld in round.melds %}<span class="tile">{{ meld }}</span>{% endfor %}<span
+                                class="tile">{{ round.hand }}</span>
+                        </td>
                         <td class="tile">{{ round.your_choice_reasoning.discard_tile }}</td>
                         <td class="tile">
                             {% for reasoning in round.expected_reasonings %}{{ reasoning.discard_tile }}{% endfor %}
