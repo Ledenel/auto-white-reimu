@@ -5,8 +5,8 @@ before_install:
   - pip install pytest pytest-cov
   - pip install coveralls
 install:
-  - python setup.py install
+  - python setup.py develop
 script:
-  py.test
+  - pytest --cov=mahjong
 after_success:
   - coveralls
