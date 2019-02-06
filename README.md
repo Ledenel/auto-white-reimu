@@ -1,7 +1,7 @@
 # auto-white-reimu
 
 [![Build Status](https://travis-ci.com/Ledenel/auto-white-reimu.svg?branch=master)](https://travis-ci.com/Ledenel/auto-white-reimu)
-[![Coverage Status](https://coveralls.io/repos/github/badges/shields/badge.svg?branch=master)](https://coveralls.io/github/badges/shields?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/Ledenel/auto-white-reimu/badge.svg?branch=master)](https://coveralls.io/github/Ledenel/auto-white-reimu?branch=master)
 
 
 A mahjong library aimed to implement mahjong AIs by imitating white reimu -- a excellent mahjong player.
