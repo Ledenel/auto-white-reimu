@@ -1,7 +1,0 @@
-bitstruct==6.0.0
-Jinja2==2.10
-numpy==1.16.1
-pytest==4.2.0
-pytest-runner==4.2
-requests==2.21.0
-
