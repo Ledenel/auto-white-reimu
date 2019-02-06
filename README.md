@@ -10,9 +10,15 @@ A mahjong library aimed to implement mahjong AIs by imitating white reimu -- a e
 
 A demo for estimating win rate of a hand (using Monte Carlo method).
 
+To run, clone the sources and install dependencies by typing
 
+`python setup.py install`
 
-To run the demo, type command `python mahjong/win_rate_demo.py`.
+in the root directory.
+
+then, you can run the tools with
+
+`python mahjong/win_rate_demo.py`.
 
 A example of input hand should be like this:
 
