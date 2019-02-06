@@ -7,6 +7,6 @@ before_install:
 install:
   - python setup.py install
 script:
-  - pytest --cov=mahjong/
+  - pytest --cov=mahjong
 after_success:
   - coveralls
