@@ -56,7 +56,7 @@ class TenhouGame:
         self.seeds = number_list(self._meta.INIT.seed)
         self.east_index = int(self._meta.INIT.oya)
         self.prevailing_and_game = SubCategory(
-            self.game_type.play_wind_count(), 4, caption="prevailing_and_game",
+            self.game_type.play_wind_count() + 1, 4, caption="prevailing_and_game",
             names=["prevailing", "game_index"]
         )
 
