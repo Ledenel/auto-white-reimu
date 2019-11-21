@@ -68,7 +68,7 @@ class TenhouEvent:
         return getattr(self._wrapped_xml_event, name)
 
     def __repr__(self):
-        return "<{}>".format(self)
+        return "<%s>" % self
 
     @property
     def meta_attribute(self):
@@ -97,14 +97,15 @@ class TenhouEvent:
                 tile=tile_from_tenhou(int(attrs['hai'])),
             )
         if is_somebody_win_game(event):
-            return 'player {winner} win {score} from {loser}'.format(
+            return 'player {winner} win {score} from player {loser}'.format(
                 winner=attrs['who'],
                 loser=attrs['fromWho'],
                 score=number_list(event.attrib['ten'])[1],
             )
         if is_nobody_win_game(event):
-            return 'no body win due to {type}'.format(
-                type=DRAWN_TYPES[attrs['type']],
+            return 'no body win {reason}'.format(
+                reason=DRAWN_TYPES[attrs['type']]
+                if 'type' in attrs else '',
             )
 
         return "UNPARSED {tag}: {attr_expr}".format(

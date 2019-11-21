@@ -96,8 +96,8 @@ class Meld(metaclass=ABCMeta):
         return "<{}>".format(self)
 
     def __str__(self):
-        return "'{type}' using '{self_tile}' to get '{borrow}' from '{player}'".format(
-            type=type(self),
+        return "'{type}' using '{self_tile}' to get '{borrow}' from player {player}".format(
+            type=type(self).__name__,
             self_tile=tile_set_from_tenhou(self.self_tiles),
             borrow=tile_set_from_tenhou(self.borrowed_tiles),
             player=self.from_who,
