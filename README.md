@@ -1,5 +1,9 @@
 # auto-white-reimu
 
+[![Build Status](https://travis-ci.com/Ledenel/auto-white-reimu.svg?branch=master)](https://travis-ci.com/Ledenel/auto-white-reimu)
+[![Coverage Status](https://coveralls.io/repos/github/Ledenel/auto-white-reimu/badge.svg?branch=master)](https://coveralls.io/github/Ledenel/auto-white-reimu?branch=master)
+
+
 A mahjong library aimed to implement mahjong AIs by imitating white reimu -- a excellent mahjong player.
 
 **Requires Python 3.7 or later.**
@@ -10,9 +14,15 @@ A mahjong library aimed to implement mahjong AIs by imitating white reimu -- a e
 
 A demo for estimating win rate of a hand (using Monte Carlo method).
 
+To run, clone the sources and install dependencies by typing
 
+`python setup.py install`
 
-To run the demo, type command `python mahjong/win_rate_demo.py`.
+in the root directory.
+
+then, you can run the tools with
+
+`python mahjong/win_rate_demo.py`.
 
 A example of input hand should be like this:
 

@@ -36,12 +36,17 @@ def log_id_from_url(view_url):
     return log_id
 
 
+def is_game_end(event):
+    return is_somebody_win_game(event) or is_nobody_win_game(event)
+
+
 class TenhouGame:
     def __init__(self, game_events, game_type: GameType, players: List[TenhouPlayer]):
         self.players = players
         init, *playing = game_events
-        _, end = (list(g) for _, g in
-                  groupby(playing, lambda event: is_somebody_win_game(event) or is_nobody_win_game(event)))
+        playing = list(playing)
+        first_end_index = next(i for (i, x) in enumerate(playing) if is_game_end(x))
+        end = [x for x in playing[first_end_index:] if is_game_end(x)]
         self.end_events = end
         self._meta = list_of_xml_configs([init])
         self._end_meta = list_of_xml_configs([game_events[-1]])
@@ -51,7 +56,7 @@ class TenhouGame:
         self.seeds = number_list(self._meta.INIT.seed)
         self.east_index = int(self._meta.INIT.oya)
         self.prevailing_and_game = SubCategory(
-            self.game_type.play_wind_count(), 4, caption="prevailing_and_game",
+            self.game_type.play_wind_count() + 1, 4, caption="prevailing_and_game",
             names=["prevailing", "game_index"]
         )
 
