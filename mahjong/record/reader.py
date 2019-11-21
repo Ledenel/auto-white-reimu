@@ -13,7 +13,7 @@ from mahjong.record.category import SubCategory
 from .stage import StageGroupby
 from .player import TenhouPlayer
 from .utils.constant import API_URL_TEMPLATE, DRAWN_TYPES
-from .utils.event import is_game_init, is_nobody_win_game, is_somebody_win_game
+from .utils.event import is_game_init, is_nobody_win_game, is_somebody_win_game, TenhouEvent
 from .utils.value.gametype import GameType
 from .utils.value.general import number_list
 
@@ -114,6 +114,7 @@ def list_of_xml_configs(xml_element_list):
 
 class TenhouRecord:
     def __init__(self, events):
+        events = [TenhouEvent(event) for event in events]
         self.events = events
         head_events, *game_chunks = list(list(g) for _, g in StageGroupby(events, True, False, key=is_game_init))
         self._meta = list_of_xml_configs(head_events)

@@ -4,8 +4,11 @@ from ..category import SubCategory, MixedCategory
 
 DRAW_INDICATOR = ['T', 'U', 'V', 'W']
 DRAW_ALL_REGEX = re.compile(r"^[%s]([0-9]+)$" % ("".join(DRAW_INDICATOR)))
+DRAW_GROUPED_REGEX = re.compile(r"^([%s])([0-9]+)$" % ("".join(DRAW_INDICATOR)))
 DISCARD_INDICATOR = ['D', 'E', 'F', 'G']
 DISCARD_ALL_REGEX = re.compile(r"^[%s]([0-9]+)$" % ("".join(DISCARD_INDICATOR)))
+DISCARD_GROUPED_REGEX = re.compile(r"^([%s])([0-9]+)$" % ("".join(DISCARD_INDICATOR)))
+
 SUIT_ORDER = 'mpsz'
 RANKS = [
     '新人',
