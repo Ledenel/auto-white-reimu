@@ -1,10 +1,11 @@
 from abc import ABCMeta, abstractmethod
-from typing import Set
+from typing import Set, Iterable
 
+from mahjong.container.set import TileSet
 from ..bit import bit_struct_from_desc, named_tuple_from_desc, unpack_with
-from ...category import SubCategory
 from ..constant import TENHOU_TILE_CATEGORY
 from ..value.tile import tile_from_tenhou
+from ...category import SubCategory
 
 flush_desc = """
 kui:u2
@@ -65,6 +66,10 @@ def init_from_basic(tiles_basic, which_first):
     return {first_tile}, self_tiles
 
 
+def tile_set_from_tenhou(tenhou_ints: Iterable[int]):
+    return TileSet(tile_from_tenhou(x) for x in tenhou_ints)
+
+
 class Meld(metaclass=ABCMeta):
     @property
     @abstractmethod
@@ -86,6 +91,17 @@ class Meld(metaclass=ABCMeta):
             return True
         else:
             return False
+
+    def __repr__(self):
+        return "<{}>".format(self)
+
+    def __str__(self):
+        return "'{type}' using '{self_tile}' to get '{borrow}' from '{player}'".format(
+            type=type(self),
+            self_tile=tile_set_from_tenhou(self.self_tiles),
+            borrow=tile_set_from_tenhou(self.borrowed_tiles),
+            player=self.from_who,
+        )
 
 
 class TenhouMeld(Meld, metaclass=ABCMeta):
