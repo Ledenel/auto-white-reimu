@@ -161,4 +161,4 @@ def from_url(url: str, timeout=3) -> TenhouRecord:
 
 
 def from_file(file) -> TenhouRecord:
-    return TenhouRecord(ET.parse(file))
+    return TenhouRecord(next(ET.parse(file).iter()))
