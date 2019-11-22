@@ -50,3 +50,21 @@ and your tenhou.net Playing name(like`Ledenel`, **not the id you used to login t
 (you can remain this to empty to generate check result for **all players**)
 
 it will generate a html report for easy checking.
+
+## Testing
+
+you could run test by installing `pytest`
+
+and run `pytest` in the root directory.
+
+For PyCharm users, we provide some shared configuration in 
+`runConfigurations.zip`. 
+
+Unzip these .xml settings and put them in your project 
+`.idea/runConfigurations/` directory. Then you would see it in PyCharm menu
+`Run -> Edit Configurations`. You may need to adjust Python Interpreter to your own environment in these settings.
+
+
+
+**PLEASE DON'T TRACK THESE .XML SETTING IN VERSION CONTROL.**
+
