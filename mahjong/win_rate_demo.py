@@ -11,6 +11,11 @@ from numpy import linalg as LA
 
 if __name__ == '__main__':
     input_hand = tile_set_from_string(input('Input hand:'))
+    while len(input_hand) != 14:
+        print("Input hand should be 14 tiles, e.g. 123m067p9s1234567z. " +
+              "You have input %s legal tiles" % len(input_hand))
+        input_hand = tile_set_from_string(input('Input hand:'))
+
     remain_tiles = TileSet(TileDistribution.ALL_TILES * 4) - input_hand
 
     remain_tile_distribution = StaticWall(remain_tiles)
