@@ -93,7 +93,7 @@ class TenhouEvent:
                 who=attrs['who'],
             )
         if is_dora_indicator_event(event):
-            return "new dora {tile}".format(
+            return "new dora indicator {tile}".format(
                 tile=tile_from_tenhou(int(attrs['hai'])),
             )
         if is_somebody_win_game(event):
