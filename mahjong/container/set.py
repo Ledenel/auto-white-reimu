@@ -47,6 +47,9 @@ class TileSet(Counter):
     def __repr__(self):
         return "%s" % self
 
+    def __len__(self):
+        return sum(v for _, v in self.items())
+
     def __lt__(self, other: TileSet):
         return list(self.items()) < list(other.items())
 

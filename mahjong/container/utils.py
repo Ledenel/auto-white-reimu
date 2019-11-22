@@ -5,7 +5,8 @@ from typing import Iterable
 from .set import TileSet
 from ..tile.definition import Tile
 
-_tile_group_regex = re.compile(r"[0-9]+[%s]" % (''.join(Tile.SUIT | Tile.HONOR)))
+_tile_group_regex = re.compile(r"[0-9]+[%s]|[1-7]+%s" 
+                               % (''.join(Tile.SUIT), ''.join(Tile.HONOR)))
 
 
 def tiles_from_string(token: str) -> Iterable[Tile]:
