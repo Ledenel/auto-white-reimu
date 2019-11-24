@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from functools import total_ordering
-
 from typing import Optional
 
 from ..container.set import TileSet
@@ -116,3 +115,45 @@ def tile_triplet(tile: Tile) -> TileSet:
 
 def tile_flush(tile: Tile) -> TileSet:
     return tile.flush()
+
+
+class AkaTile(Tile):
+    _ATILE_POOL = {}
+
+    def __new__(cls, number: int, color: str):
+        assert 0 == number
+        assert color in 'mps'
+        tile_hash = tile_hash_num(color, number)
+        if tile_hash in AkaTile._ATILE_POOL:
+            return AkaTile._ATILE_POOL[tile_hash]
+        else:
+            tile_hash = tile_hash_num(color, number + 5)
+            tile_obj = object.__new__(cls)
+            self = tile_obj
+            self._hash = tile_hash
+            self._number = number
+            self._color = color
+            self._tuple_view = (color, number + 5)
+            AkaTile._ATILE_POOL[tile_hash] = tile_obj
+            self._flush = TileSet(
+                (Tile(self._number + 5 + i, self._color) for i in range(Tile.FLUSH_LENGTH))
+            ) if self.is_suit() and self._number == 0 else None
+            self._triplet = self.repeat(Tile.TRIPLET_LENGTH)
+            self._pair = self.repeat(Tile.PAIR_LENGTH)
+            return tile_obj
+
+    def next(self) -> Tile:
+        if self.is_suit() and self._number < Tile.SUIT_MAX:
+            return Tile(self._number + 6, self._color)
+
+    def __init__(self, number: int, color: str):
+        super().__init__(number, color)
+        pass
+
+    def __hash__(self):
+        return self._hash
+
+    def repeat(self, count: int) -> TileSet:
+        return TileSet(
+            (Tile(self._number + 5, self._color) for _ in range(count))
+        )
