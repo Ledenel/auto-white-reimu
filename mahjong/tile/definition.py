@@ -121,6 +121,8 @@ class AkaTile(Tile):
     _ATILE_POOL = {}
 
     def __new__(cls, number: int, color: str):
+        assert 0 == number
+        assert color in 'mps'
         tile_hash = tile_hash_num(color, number)
         if tile_hash in AkaTile._ATILE_POOL:
             return AkaTile._ATILE_POOL[tile_hash]

@@ -1,5 +1,5 @@
+from mahjong.tile.definition import Tile, AkaTile
 from ..constant import TENHOU_TILE_CATEGORY, SUIT_ORDER
-from mahjong.tile.definition import Tile,AkaTile
 
 
 def tile_from_tenhou(index):
@@ -7,11 +7,11 @@ def tile_from_tenhou(index):
     tenhou index is numbered as [1m,1m,1m,1m,2m,2m,...,9m,1p,...,9p,1s,...,9s,1z,...,7z,7z,7z,7z]
     numbered first 5m,5s,5p is considered as aka dora.
     """
-    if index == 16:
+    if index == TENHOU_TILE_CATEGORY.index((SUIT_ORDER.index('m'), 4, 0)):
         return AkaTile(0, 'm')
-    elif index == 52:
+    elif index == TENHOU_TILE_CATEGORY.index((SUIT_ORDER.index('p'), 4, 0)):
         return AkaTile(0, 'p')
-    elif index == 88:
+    elif index == TENHOU_TILE_CATEGORY.index((SUIT_ORDER.index('s'), 4, 0)):
         return AkaTile(0, 's')
     else:
         color, number, _ = TENHOU_TILE_CATEGORY.category(index)
