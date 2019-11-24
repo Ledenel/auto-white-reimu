@@ -26,3 +26,9 @@ class TestTile(TestCase):
         assert AkaTile(0, 'p') <= Tile(6, 'p')
         assert AkaTile(0, 'p') != Tile(6, 'p')
         assert AkaTile(0, 'p') >= Tile(4, 'p')
+
+    def test_assert_errot(self):
+        self.assertRaises(AssertionError, AkaTile, 1, 'm')
+        self.assertRaises(AssertionError, AkaTile, 1, 's')
+        self.assertRaises(AssertionError, AkaTile, 1, 'p')
+        self.assertRaises(AssertionError, AkaTile, 0, 'z')
