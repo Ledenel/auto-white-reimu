@@ -128,7 +128,7 @@ class TenhouEvent:
             dict2 = {'event_type': 'INIT3', 'player': '2', 'player_see': ''.join(
                 [str(tile_from_tenhou(i)) for i in sorted([int(i) for i in attrs['hai2'].split(',')])]),
                      'score': attrs['ten'].split(',')[2] + '00'}
-            dora = {'event_type': 'DORA ', 'player': '0',
+            dora = {'event_type': 'DORA', 'player': '0',
                     'player_see': str(tile_from_tenhou(int(attrs['seed'].split(',')[-1]))),
                     'player_show': str(tile_from_tenhou(int(attrs['seed'].split(',')[-1])))}
             initround = {'event_type': 'ROUND', 'score': attrs['seed'].split(',')[2] + '000'}
@@ -142,11 +142,11 @@ class TenhouEvent:
         draw = draw_tile_change(event)
         if draw:
             player, tile = draw['player'], draw['tile']
-            return [{'event_type': 'DRAW ', 'player': player, 'player_see': str(tile)}]
+            return [{'event_type': 'DRAW', 'player': str(player), 'player_see': str(tile)}]
         discard = discard_tile_change(event)
         if discard:
             player, tile = discard['player'], discard['tile']
-            return [{'event_type': 'DISCA', 'player': player, 'player_show': str(tile)}]
+            return [{'event_type': 'DISCARD', 'player': str(player), 'player_show': str(tile)}]
         if is_open_hand(event):
 
             player = attrs['who']
@@ -156,58 +156,58 @@ class TenhouEvent:
             self_tile = item.self_tiles
             borrow_tile = item.borrowed_tiles
             if type_of.syuntsu:
-                return [{'event_type': 'CHI  ', 'player': player,
+                return [{'event_type': 'CHI', 'player': str(player),
                          'player_show': ''.join([str(tile_from_tenhou(int(i))) for i in self_tile]),
                          'player_open': ''.join([str(tile_from_tenhou(int(i))) for i in borrow_tile]) + ''.join(
-                             [str(tile_from_tenhou(int(i))) for i in self_tile]), 'origin': source}]
+                             [str(tile_from_tenhou(int(i))) for i in self_tile]), 'origin': str(source)}]
             elif type_of.koutsu:
-                return [{'event_type': 'PENG ', 'player': player,
+                return [{'event_type': 'PENG ', 'player': str(player),
                          'player_show': ''.join([str(tile_from_tenhou(int(i))) for i in self_tile]),
                          'player_open': ''.join([str(tile_from_tenhou(int(i))) for i in borrow_tile]) + ''.join(
-                             [str(tile_from_tenhou(int(i))) for i in self_tile]), 'origin': source}]
+                             [str(tile_from_tenhou(int(i))) for i in self_tile]), 'origin': str(source)}]
             elif type_of.chakan:
-                return [{'event_type': 'GANG', 'player': player,
+                return [{'event_type': 'GANG', 'player': str(player),
                          'player_show': ''.join([str(tile_from_tenhou(int(i))) for i in self_tile]),
                          'player_open': ''.join([str(tile_from_tenhou(int(i))) for i in borrow_tile]) + ''.join(
-                             [str(tile_from_tenhou(int(i))) for i in self_tile]), 'origin': source}]
+                             [str(tile_from_tenhou(int(i))) for i in self_tile]), 'origin': str(source)}]
             elif type_of.nuki:
-                return [{'event_type': 'KITA ', 'player': player,
+                return [{'event_type': 'KITA', 'player': str(player),
                          'player_show': str([tile_from_tenhou(i) for i in self_tile][0]),
                          'player_open': str([tile_from_tenhou(i) for i in self_tile][0])}]
             else:
                 if len(borrow_tile) == 0:
-                    return [{'event_type': 'ANGAN', 'player': player,
+                    return [{'event_type': 'ANGANG', 'player': str(player),
                              'player_show': ''.join([str(tile_from_tenhou(int(i))) for i in self_tile]),
                              'player_open': ''.join([str(tile_from_tenhou(int(i))) for i in self_tile]),
-                             'origin': source}]
+                             'origin': str(source)}]
                 else:
-                    return [{'event_type': 'MNGAN', 'player': player,
+                    return [{'event_type': 'MINGGANG', 'player': str(player),
                              'player_show': ''.join([str(tile_from_tenhou(int(i))) for i in self_tile]),
                              'player_open': ''.join([str(tile_from_tenhou(int(i))) for i in borrow_tile]) + ''.join(
-                                 [str(tile_from_tenhou(int(i))) for i in self_tile]), 'origin': source}]
+                                 [str(tile_from_tenhou(int(i))) for i in self_tile]), 'origin': str(source)}]
 
         if is_richii(event):
             player = attrs['who']
             status = attrs['step']
             if status == '1':
-                return [{'event_type': 'CALRC', 'player': player}]
+                return [{'event_type': 'CALLRICHI', 'player': str(player)}]
             if status == '2':
-                richi = {'event_type': 'RICHI', 'player': player}
-                score = {'event_type': 'SCORE', 'player': player, 'score': '-1000'}
+                richi = {'event_type': 'RICHI', 'player': str(player)}
+                score = {'event_type': 'SCORE', 'player': str(player), 'score': '-1000'}
                 return [richi, score]
 
         if is_dora_indicator_event(event):
             tile = tile_from_tenhou(int(attrs['hai']))
-            return [{'event_type': 'DORA ', 'player': '0', 'player_see': tile, 'player_show': tile}]
+            return [{'event_type': 'DORA', 'player': '0', 'player_see': tile, 'player_show': tile}]
 
         if is_somebody_win_game(event):
             player = attrs['who']
             loser = attrs['fromWho']
             score = number_list(event.attrib['ten'])[1]
-            return [{'event_type': 'WIN  ', 'player': player, 'origin': loser}]
+            return [{'event_type': 'WIN', 'player': str(player), 'origin': str(loser)}]
 
         if is_nobody_win_game(event):
-            return [{'event_type': 'EVEN ', 'origin': DRAWN_TYPES[attrs['type']] if 'type' in attrs else ''}]
+            return [{'event_type': 'EVEN', 'origin': DRAWN_TYPES[attrs['type']] if 'type' in attrs else ''}]
 
         logging.warning(str(event))
         return []
