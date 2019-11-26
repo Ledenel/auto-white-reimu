@@ -1,3 +1,4 @@
+import logging
 from xml.etree.ElementTree import Element
 
 from mahjong.record.utils.bit import unpack_with
@@ -208,4 +209,5 @@ class TenhouEvent:
         if is_nobody_win_game(event):
             return [{'event_type': 'EVEN ', 'origin': DRAWN_TYPES[attrs['type']] if 'type' in attrs else ''}]
 
-        return ['UNPARSED']
+        logging.warning(str(event))
+        return []
