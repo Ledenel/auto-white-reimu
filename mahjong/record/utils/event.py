@@ -118,14 +118,18 @@ class TenhouEvent:
         event = self._wrapped_xml_event
         attrs = event.attrib
         if event.tag == 'INIT':
-            dict0 = {'event_type': 'INIT', 'player': '0', 'player_see': attrs['hai0']}
-            dict1 = {'event_type': 'INIT', 'player': '1', 'player_see': attrs['hai1']}
-            dict2 = {'event_type': 'INIT', 'player': '2', 'player_see': attrs['hai2']}
+            dict0 = {'event_type': 'INIT', 'player': '0', 'player_see': attrs['hai0'],
+                     'special': attrs['ten'].split(',')[0]}
+            dict1 = {'event_type': 'INIT', 'player': '1', 'player_see': attrs['hai1'],
+                     'special': attrs['ten'].split(',')[1]}
+            dict2 = {'event_type': 'INIT', 'player': '2', 'player_see': attrs['hai2'],
+                     'special': attrs['ten'].split(',')[2]}
             dora = {'event_type': 'DORA', 'player': '0', 'player_see': attrs['seed'].split(',')[-1],
                     'player_show': attrs['seed'].split(',')[-1]}
             initround = {'event_type': 'ROUN', 'special': attrs['seed'].split(',')[2]}
             if 'hai3' in attrs.keys():
-                dict3 = {'event_type': 'INIT', 'player': '3', 'tiles': attrs['hai3']}
+                dict3 = {'event_type': 'INIT', 'player': '3', 'tiles': attrs['hai3'],
+                         'special': attrs['ten'].split(',')[3]}
                 return dict0, dict1, dict2, dict3, dora, initround
             else:
                 return dict0, dict1, dict2, dora, initround
@@ -171,7 +175,9 @@ class TenhouEvent:
             if status == '1':
                 return {'event_type': 'RICH', 'player': player, 'special': 'CALL RICHI'}
             if status == '2':
-                return {'event_type': 'RICH', 'player': player, 'special': 'RICHI SUCCESS'}
+                richi = {'event_type': 'RICH', 'player': player, 'special': 'RICHI SUCCESS'}
+                score = {'event_type': 'SCOR', 'player': player, 'special': '-1000'}
+                return richi, score
 
         if is_dora_indicator_event(event):
             tile = tile_from_tenhou(int(attrs['hai']))
