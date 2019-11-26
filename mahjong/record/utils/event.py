@@ -131,7 +131,7 @@ class TenhouEvent:
                     'player_see': str(tile_from_tenhou(int(attrs['seed'].split(',')[-1]))),
                     'player_show': str(tile_from_tenhou(int(attrs['seed'].split(',')[-1])))}
             initround = {'event_type': 'ROUND', 'score': attrs['seed'].split(',')[2] + '000'}
-            if 'hai3' in attrs.keys():
+            if ('hai3' in attrs.keys()) and (attrs['hai3'] != ''):
                 dict3 = {'event_type': 'INIT4', 'player': '3', 'player_see': ''.join(
                     [str(tile_from_tenhou(i)) for i in sorted([int(i) for i in attrs['hai3'].split(',')])]),
                          'score': attrs['ten'].split(',')[3] + '00'}
