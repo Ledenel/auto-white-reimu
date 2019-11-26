@@ -1,7 +1,8 @@
 from xml.etree.ElementTree import Element
 
+from mahjong.record.utils.bit import unpack_with
 from mahjong.record.utils.value.general import number_list
-from mahjong.record.utils.value.meld import meld_from
+from mahjong.record.utils.value.meld import meld_from, MeldTypeData, meld_type_unpacker
 from mahjong.record.utils.value.tile import tile_from_tenhou
 from .constant import DRAW_ALL_REGEX, DISCARD_ALL_REGEX, DRAW_GROUPED_REGEX, DISCARD_GROUPED_REGEX, DISCARD_INDICATOR, \
     DRAW_INDICATOR, DRAWN_TYPES
@@ -129,4 +130,58 @@ class TenhouEvent:
             else:
                 return dict0, dict1, dict2, dora, initround
         draw = draw_tile_change(event)
-        
+        if draw:
+            player, tile = draw['player'], draw['tile']
+            return {'event_type': 'DRAW', 'player': player, 'player_see': tile}
+        discard = discard_tile_change(event)
+        if discard:
+            player, tile = draw['player'], draw['tile']
+            return {'event_type': 'DISC', 'player': player, 'player_show': tile}
+        if is_open_hand(event):
+
+            player = attrs['who']
+            item = meld_from(event)
+            type_of = unpack_with(MeldTypeData, meld_type_unpacker, event.attrib['m'])
+            source = item.from_who
+            self_tile = item.self_tiles
+            borrow_tile = item.borrowed_tiles
+            if type_of.syuntsu:
+                return {'event_type': 'CHI ', 'player': player, 'player_show': str(self_tile),
+                        'player_open': str(borrow_tile) + str(self_tile), 'special': source}
+            elif type_of.koutsu:
+                return {'event_type': 'PENG', 'player': player, 'player_show': str(self_tile),
+                        'player_open': str(borrow_tile) + str(self_tile), 'special': source}
+            elif type_of.chakan:
+                return {'event_type': 'GANG', 'player': player, 'player_show': str(self_tile),
+                        'player_open': str(borrow_tile) + str(self_tile), 'special': source}
+            elif type_of.nuki:
+                return {'event_type': 'KITA', 'player': player, 'player_show': str(self_tile),
+                        'player_open': str(self_tile)}
+            else:
+                if len(borrow_tile) == 0:
+                    return {'event_type': 'AGAN', 'player': player, 'player_show': str(self_tile),
+                            'player_open': str(self_tile), 'special': source}
+                else:
+                    return {'event_type': 'MGAN', 'player': player, 'player_show': str(self_tile),
+                            'player_open': str(borrow_tile) + str(self_tile), 'special': source}
+
+        if is_richii(event):
+            player = attrs['who']
+            status = attrs['step']
+            if status == '1':
+                return {'event_type': 'RICH', 'player': player, 'special': 'CALL RICHI'}
+            if status == '2':
+                return {'event_type': 'RICH', 'player': player, 'special': 'RICHI SUCCESS'}
+
+        if is_dora_indicator_event(event):
+            tile = tile_from_tenhou(int(attrs['hai']))
+            return {'event_type': 'DORA', 'player': '0', 'player_see': tile, 'player_show': tile}
+
+        if is_somebody_win_game(event):
+            player = attrs['who']
+            loser = attrs['fromWho']
+            score = number_list(event.attrib['ten'])[1]
+            return {'event_type': 'WIN ', 'player': player, 'special': loser}
+
+        if is_nobody_win_game(event):
+            return {'event_type': 'EVEN', 'special': DRAWN_TYPES[attrs['type']]}
