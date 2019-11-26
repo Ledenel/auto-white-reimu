@@ -13,3 +13,5 @@ class TestTile(TestCase):
                 retlen.append(len(ret))
         assert retlen == [5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+        assert len(a.to_paifu())==sum(retlen)
