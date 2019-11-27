@@ -168,11 +168,11 @@ class TenhouRecord:
         paifu_data = []
         for i in self.game_list:
             paifu_data.extend(i.to_paifu())
-        fin1 = {'event_type': 'FIN1', 'player': '0', 'score': str(self.end_score[0]) + '00'}
-        fin2 = {'event_type': 'FIN2', 'player': '1', 'score': str(self.end_score[1]) + '00'}
-        fin3 = {'event_type': 'FIN3', 'player': '2', 'score': str(self.end_score[2]) + '00'}
+        fin1 = {'event_type': 'FIN1', 'player': '0', 'score': str(self.end_score[0] * 100)}
+        fin2 = {'event_type': 'FIN2', 'player': '1', 'score': str(self.end_score[1] * 100)}
+        fin3 = {'event_type': 'FIN3', 'player': '2', 'score': str(self.end_score[2] * 100)}
         if len(self.players) == 4:
-            fin4 = {'event_type': 'FIN4', 'player': '3', 'score': str(self.end_score[3]) + '00'}
+            fin4 = {'event_type': 'FIN4', 'player': '3', 'score': str(self.end_score[3] * 100)}
             paifu_data.extend([fin1, fin2, fin3, fin4])
         else:
             paifu_data.extend([fin1, fin2, fin3])
