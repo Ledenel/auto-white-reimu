@@ -209,5 +209,5 @@ class TenhouEvent:
         if is_nobody_win_game(event):
             return [{'event_type': 'EVEN', 'origin': DRAWN_TYPES[attrs['type']] if 'type' in attrs else ''}]
 
-        logging.warning(str(event))
+        logging.warning('Unparsed or not support event: {0}'.format(str(event)))
         return []
