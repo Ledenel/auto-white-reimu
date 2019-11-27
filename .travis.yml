@@ -2,8 +2,8 @@ dist: xenial
 language: python
 python: 3.7
 before_install:
-  - pip install pytest pytest-cov
-  - pip install coveralls
+  - pip install .[test]
+  - pip install pytest-cov coveralls
 install:
   - python setup.py develop
 script:

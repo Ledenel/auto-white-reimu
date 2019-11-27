@@ -3,15 +3,14 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 from argparse import Namespace
 from functools import reduce
-from itertools import groupby
 from typing import List
 from urllib.parse import urlparse, parse_qs
 
 import requests
 
 from mahjong.record.category import SubCategory
-from .stage import StageGroupby
 from .player import TenhouPlayer
+from .stage import StageGroupby
 from .utils.constant import API_URL_TEMPLATE, DRAWN_TYPES
 from .utils.event import is_game_init, is_nobody_win_game, is_somebody_win_game, TenhouEvent
 from .utils.value.gametype import GameType
@@ -102,6 +101,16 @@ class TenhouGame:
     def __repr__(self):
         return "<%s>" % self
 
+    def to_paifu(self):
+        paifu_data = []
+        prevailing, game_index = self.game_index()
+        game_str = "{0}-{1}-{2}".format("東南西北"[prevailing], game_index + 1, self.sub_game_index())
+        for i in self.events:
+            paifu_data.extend(i.to_paifu())
+        for i in paifu_data:
+            i['game_str'] = game_str
+        return paifu_data
+
 
 def xml_message_config_scan(namespace: Namespace, message):
     setattr(namespace, message.tag, Namespace(**message.attrib))
@@ -154,6 +163,12 @@ class TenhouRecord:
 
     def __repr__(self):
         return "<%s>" % self
+
+    def to_paifu(self):
+        paifu_data = []
+        for i in self.game_list:
+            paifu_data.extend(i.to_paifu())
+        return paifu_data
 
 
 def from_url(url: str, timeout=3) -> TenhouRecord:
