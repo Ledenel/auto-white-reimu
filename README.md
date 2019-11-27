@@ -53,7 +53,7 @@ it will generate a html report for easy checking.
 
 ## Testing
 
-you could run test by installing `pytest`
+you could run test by executing `pip install .[test]` at root dir, this would install all dependence for you.
 
 and run `pytest` in the root directory.
 
