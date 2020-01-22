@@ -141,7 +141,7 @@ def main():
         file_name = "tenhou_record_%s_%s.html" % (log_id_from_url(log_url), player.name)
         with open(file_name, "w+", encoding='utf-8') as result_file:
             all_tiles = [''.join(str(x) for x in item) for item in
-                         list(product(range(1, 10), "mps")) + list(product(range(1, 8), "z"))]
+                         list((n, t) for t in "mps" for n in range(1, 10)) + list(product(range(1, 8), "z"))]
             # print(all_tiles)
             result_file.write(template.render(
                 player=str(player),

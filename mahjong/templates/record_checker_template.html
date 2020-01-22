@@ -13,12 +13,22 @@
         {% for tile_name in all_tiles %}
         .pic{{ tile_name }} {
             background-image: url("data:image/png;base64,{{ ('mjpic/' + tile_name + '.png') | load_raw | b64encode | safe}}");
-            width: 16px;
-            height: 20px;
-            display: inline;
         }
         {% endfor %}
-        
+
+        .big {
+            width: 24px;
+            height: 30px;
+            display: inline-block;
+            background-size: cover;
+        }
+
+        .small {
+            width: 16px;
+            height: 20px;
+            display: inline-block;
+            background-size: cover;
+        }
         
         .tile-small {
             letter-spacing: -7.5px;
@@ -53,11 +63,19 @@
 </head>
 <body>
 
-<p class="tile">🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡</p>
-<p class="tile-small">🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡</p>
+{#<p class="tile">🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡</p>#}
+{#<p class="tile-small">🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡</p>#}
 
-{% for tile_name in all_tiles %}<img src="data:image/png;base64,{{ ('mjpic/' + tile_name + '.png') | load_raw | b64encode | safe}}">{% endfor %}
+{%- for tile_name in all_tiles -%}
+    <div class="pic{{ tile_name }} big"></div>
+{%- endfor -%}
 
+<hr>
+
+{%- for tile_name in all_tiles -%}
+    <div class="pic{{ tile_name }} small"></div>
+{%- endfor -%}
+{#    <img src="data:image/png;base64,{{ ('mjpic/' + tile_name + '.png') | load_raw | b64encode | safe}}">#}
 <p> Player: {{ player }} </p>
 <p>{{ record }} <a href="{{ log_url }}">Link</a></p>
 
