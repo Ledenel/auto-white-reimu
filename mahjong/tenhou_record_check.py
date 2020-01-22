@@ -47,6 +47,14 @@ def to_unicode_tile(tile: Tile) -> str:
     return chr(0x1f000 + index)
 
 
+def to_plain_tile(tile: Tile) -> str:
+    return str(tile)
+
+
+def join_tiles(items):
+    return list(items)
+
+
 class ReasoningItem:
     def __init__(self, discard_tile: Tile, waiting_step: int, useful_tiles: Set[Tile],
                  useful_tiles_count: int):
@@ -58,8 +66,8 @@ class ReasoningItem:
 
     def norm(self):
         if not self._normed:
-            self.discard_tile = to_unicode_tile(self.discard_tile)
-            self.useful_tiles = "".join(to_unicode_tile(x) for x in sorted(self.useful_tiles))
+            self.discard_tile = join_tiles([to_plain_tile(self.discard_tile)])
+            self.useful_tiles = join_tiles(to_plain_tile(x) for x in sorted(self.useful_tiles))
             self._normed = True
 
 
@@ -141,7 +149,7 @@ def main():
         file_name = "tenhou_record_%s_%s.html" % (log_id_from_url(log_url), player.name)
         with open(file_name, "w+", encoding='utf-8') as result_file:
             all_tiles = [''.join(str(x) for x in item) for item in
-                         list((n, t) for t in "mps" for n in range(1, 10)) + list(product(range(1, 8), "z"))]
+                         list((n, t) for t in "mps" for n in range(0, 10)) + list(product(range(1, 8), "z"))]
             # print(all_tiles)
             result_file.write(template.render(
                 player=str(player),
@@ -221,10 +229,10 @@ def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, 
     for item in merged_win_reasonings:
         item.norm()
 
-    hand_str = ''.join(to_unicode_tile(x) for x in hand.tiles())
+    hand_str = join_tiles(to_plain_tile(x) for x in hand.tiles())
     meld_strs = [
-        ''.join(to_unicode_tile(tile_from_tenhou(x))
-                for x in list(meld.self_tiles) + list(meld.borrowed_tiles))
+        join_tiles(to_plain_tile(tile_from_tenhou(x))
+                   for x in list(meld.self_tiles) + list(meld.borrowed_tiles))
         for meld in player_meld_state.value
 
     ]
