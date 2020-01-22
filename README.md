@@ -68,3 +68,10 @@ Unzip these .xml settings and put them in your project
 
 **PLEASE DON'T TRACK THESE .XML SETTING IN VERSION CONTROL.**
 
+# ACKNOWLEDGEMENT
+
+Thanks for tile image provided by **Void**.
+
+Using mahjong image in this project is fine.
+For other usage, please concat him via QQ: 1246465300
+

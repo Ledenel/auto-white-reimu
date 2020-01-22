@@ -9,7 +9,17 @@
             font-size: 36px;
             padding-right: 12px;
         }
-
+        
+        {% for tile_name in all_tiles %}
+        .pic{{ tile_name }} {
+            background-image: url("data:image/png;base64,{{ ('mjpic/' + tile_name + '.png') | load_raw | b64encode | safe}}");
+            width: 16px;
+            height: 20px;
+            display: inline;
+        }
+        {% endfor %}
+        
+        
         .tile-small {
             letter-spacing: -7.5px;
             font-size: 24px;
@@ -45,6 +55,8 @@
 
 <p class="tile">🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡</p>
 <p class="tile-small">🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡</p>
+
+{% for tile_name in all_tiles %}<img src="data:image/png;base64,{{ ('mjpic/' + tile_name + '.png') | load_raw | b64encode | safe}}">{% endfor %}
 
 <p> Player: {{ player }} </p>
 <p>{{ record }} <a href="{{ log_url }}">Link</a></p>

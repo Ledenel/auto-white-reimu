@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-
+import functools
 import operator as op
 import os
+import base64
 from functools import reduce
-from itertools import groupby
+from itertools import groupby, product
 from typing import Set, List, Callable, TypeVar, Optional
 
 from jinja2 import Environment, select_autoescape, FileSystemLoader
@@ -109,6 +110,12 @@ def find_in_list(lst: List[T], key: Callable[[T], bool]) -> Optional[T]:
     return next((x for x in lst if key(x)), None)
 
 
+def load_raw(resource, template_path=""):
+    with open(os.path.join(template_path, resource), "rb") as res:
+        bts = res.read()
+    return bts
+
+
 def main():
     log_url = input('Input your tenhou.net log link:').strip()
     name = input('Input your tenhou.net display name(default to check all players):').strip('\n')
@@ -119,23 +126,29 @@ def main():
         if player is None:
             raise ValueError("Player '%s' not found in record %s." % (name, record))
         planned_players = [player]
+    template_path = 'mahjong/templates'
     env = Environment(
-        loader=FileSystemLoader('mahjong/templates'),
+        loader=FileSystemLoader(template_path),
         autoescape=select_autoescape(['html', 'xml'])
     )
+    env.filters['load_raw'] = functools.partial(load_raw, template_path=template_path)
+    env.filters['b64encode'] = lambda t: base64.standard_b64encode(t).decode()
+
     template = env.get_template("record_checker_template.html")
-
     for player in planned_players:
-
         games = [GameAnalysis(str(game), game_reason_list(game, player, record)) for game in record.game_list]
 
         file_name = "tenhou_record_%s_%s.html" % (log_id_from_url(log_url), player.name)
         with open(file_name, "w+", encoding='utf-8') as result_file:
+            all_tiles = [''.join(str(x) for x in item) for item in
+                         list(product(range(1, 10), "mps")) + list(product(range(1, 8), "z"))]
+            # print(all_tiles)
             result_file.write(template.render(
                 player=str(player),
                 record=str(record),
                 log_url=log_url,
-                games=games
+                games=games,
+                all_tiles=all_tiles
             ))
 
         print("report has been saved to", os.path.abspath(file_name))
