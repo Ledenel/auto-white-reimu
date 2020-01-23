@@ -2,6 +2,7 @@
 import operator as op
 import base64
 import os
+import sys
 
 import pkg_resources
 
@@ -10,7 +11,7 @@ from functools import reduce
 from itertools import groupby, product
 from typing import Set, List, Callable, TypeVar, Optional
 
-from jinja2 import Environment, select_autoescape, PackageLoader
+from jinja2 import Environment, select_autoescape, PackageLoader, FileSystemLoader
 
 from mahjong.container.pattern.reasoning import HeuristicPatternMatchWaiting
 from mahjong.container.pattern.win import NormalTypeWin, UniquePairs
@@ -121,13 +122,26 @@ def find_in_list(lst: List[T], key: Callable[[T], bool]) -> Optional[T]:
     return next((x for x in lst if key(x)), None)
 
 
+# load_raw("mahjong.templates.mjpic")
 def load_raw(resource, resource_path):
-    return pkg_resources.resource_string(resource_path, resource)
+    if getattr(sys, 'frozen', False):
+        logger.debug(sys._MEIPASS)
+        resource_file_subpath = os.path.join(*resource_path.split('.'))
+        resource_full_path = os.path.join(sys._MEIPASS, resource_file_subpath, resource)
+        with open(resource_full_path, "rb") as res:
+            return res.read()
+    else:
+        return pkg_resources.resource_string(resource_path, resource)
 
 
 def template_env(template_path):
+    if getattr(sys, 'frozen', False):
+        logger.debug(sys._MEIPASS)
+        loader = FileSystemLoader(os.path.join(sys._MEIPASS, template_path, "templates"))
+    else:
+        loader = PackageLoader(template_path)
     env = Environment(
-        loader=PackageLoader(template_path),
+        loader=loader,
         autoescape=select_autoescape(['html', 'xml'])
     )
     env.filters['load_raw'] = load_raw
@@ -136,6 +150,8 @@ def template_env(template_path):
 
 
 def main():
+    logger.remove()
+    logger.add(sys.stderr, level="INFO")
     log_url = input('Input your tenhou.net log link:').strip()
     record = from_url(log_url, 10)
     print('read successful. pick a number to select player:')
