@@ -11,6 +11,7 @@ numpy = "*"
 bitstruct = "*"
 requests = "*"
 jinja2 = "*"
+loguru = "*"
 
 [requires]
 python_version = "3.8"

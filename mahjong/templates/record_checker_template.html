@@ -12,7 +12,7 @@
 
         {% for tile_name in all_tiles %}
             .pic{{ tile_name }} {
-                background-image: url("data:image/png;base64,{{ ('mjpic/' + tile_name + '.png') | load_raw | b64encode | safe}}");
+                background-image: url("data:image/png;base64,{{ (tile_name + '.png') | load_raw("mahjong.templates.mjpic") | b64encode | safe}}");
             }
         {% endfor %}
 

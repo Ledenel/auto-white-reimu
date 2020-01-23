@@ -7,7 +7,7 @@ from functools import reduce
 from itertools import groupby, product
 from typing import Set, List, Callable, TypeVar, Optional
 
-from jinja2 import Environment, select_autoescape, FileSystemLoader
+from jinja2 import Environment, select_autoescape, FileSystemLoader, PackageLoader
 
 from mahjong.container.pattern.reasoning import HeuristicPatternMatchWaiting
 from mahjong.container.pattern.win import NormalTypeWin, UniquePairs
@@ -117,11 +117,19 @@ T = TypeVar("T")
 def find_in_list(lst: List[T], key: Callable[[T], bool]) -> Optional[T]:
     return next((x for x in lst if key(x)), None)
 
+import pkg_resources
 
-def load_raw(resource, template_path=""):
-    with open(os.path.join(template_path, resource), "rb") as res:
-        bts = res.read()
-    return bts
+def load_raw(resource, resource_path):
+    return pkg_resources.resource_string(resource_path, resource)
+
+def template_env(template_path):
+    env = Environment(
+        loader=PackageLoader(template_path),
+        autoescape=select_autoescape(['html', 'xml'])
+    )
+    env.filters['load_raw'] = load_raw
+    env.filters['b64encode'] = lambda t: base64.standard_b64encode(t).decode()
+    return env
 
 
 def main():
@@ -134,32 +142,32 @@ def main():
         if player is None:
             raise ValueError("Player '%s' not found in record %s." % (name, record))
         planned_players = [player]
-    template_path = 'mahjong/templates'
-    env = Environment(
-        loader=FileSystemLoader(template_path),
-        autoescape=select_autoescape(['html', 'xml'])
-    )
-    env.filters['load_raw'] = functools.partial(load_raw, template_path=template_path)
-    env.filters['b64encode'] = lambda t: base64.standard_b64encode(t).decode()
+    # template_path = 'mahjong/templates'
+    env = template_env("mahjong")
 
     template = env.get_template("record_checker_template.html")
     for player in planned_players:
-        games = [GameAnalysis(str(game), game_reason_list(game, player, record)) for game in record.game_list]
-
-        file_name = "tenhou_record_%s_%s.html" % (log_id_from_url(log_url), player.name)
-        with open(file_name, "w+", encoding='utf-8') as result_file:
-            all_tiles = [''.join(str(x) for x in item) for item in
-                         list((n, t) for t in "mps" for n in range(0, 10)) + list(product(range(1, 8), "z"))]
-            # print(all_tiles)
-            result_file.write(template.render(
-                player=str(player),
-                record=str(record),
-                log_url=log_url,
-                games=games,
-                all_tiles=all_tiles
-            ))
+        file_name = render_template(log_url, player, record, template)
 
         print("report has been saved to", os.path.abspath(file_name))
+
+
+def render_template(log_url, player, record, template):
+    games = [GameAnalysis(str(game), game_reason_list(game, player, record)) for game in record.game_list]
+    file_name = "tenhou_record_%s_%s.html" % (log_id_from_url(log_url), player.name)
+    with open(file_name, "w+", encoding='utf-8') as result_file:
+        all_tiles = [''.join(str(x) for x in item) for item in
+                     list((n, t) for t in "mps" for n in range(0, 10)) + list(product(range(1, 8), "z"))]
+        # print(all_tiles)
+        result_file.write(template.render(
+            player=str(player),
+            record=str(record),
+            log_url=log_url,
+            games=games,
+            all_tiles=all_tiles
+        ))
+    return file_name
+
 
 
 def game_reason_list(game, player, record):
