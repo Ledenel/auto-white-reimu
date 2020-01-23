@@ -3,6 +3,9 @@ import functools
 import operator as op
 import os
 import base64
+import pkg_resources
+
+from loguru import logger
 from functools import reduce
 from itertools import groupby, product
 from typing import Set, List, Callable, TypeVar, Optional
@@ -118,9 +121,6 @@ def find_in_list(lst: List[T], key: Callable[[T], bool]) -> Optional[T]:
     return next((x for x in lst if key(x)), None)
 
 
-import pkg_resources
-
-
 def load_raw(resource, resource_path):
     return pkg_resources.resource_string(resource_path, resource)
 
@@ -169,7 +169,6 @@ def render_template(log_url, player, record, template):
     with open(file_name, "w+", encoding='utf-8') as result_file:
         all_tiles = [''.join(str(x) for x in item) for item in
                      list((n, t) for t in "mps" for n in range(0, 10)) + list(product(range(1, 8), "z"))]
-        # print(all_tiles)
         result_file.write(template.render(
             player=str(player),
             record=str(record),
@@ -181,7 +180,7 @@ def render_template(log_url, player, record, template):
 
 
 def game_reason_list(game, player, record):
-    print("start game", game)
+    ("start game", game)
     hand_state = PlayerHand(player)
     player_meld_state = PlayerMeld(player)
     invisible_tiles_state = InvisibleTiles(len(record.players))
@@ -207,7 +206,7 @@ def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, 
     invisible_player_perspective = invisible_tiles_state.value - set(hand_state.value)
     meld_count = sum(1 for meld in player_meld_state.value if not isinstance(meld, Kita))
     hand = TileSet(tile_from_tenhou(index) for index in hand_state.value)
-    print("reasoning", hand)
+    logger.info("reasoning {}", hand)
     win_types = [NormalTypeWin(melds=4 - meld_count)]
     reasoning_names = ["normal_reasonings", "seven_pair_reasonings"]
     if meld_count == 0:
@@ -260,7 +259,7 @@ def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, 
         wrong_rate, False
     )
 
-    print("reasoned", hand)
+    logger.info("reasoned {}", hand)
 
     for name, win_reason in zip(reasoning_names, win_reasonings):
         for item in win_reason:
