@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-import functools
 import operator as op
-import os
 import base64
+import os
+
 import pkg_resources
 
 from loguru import logger
@@ -10,13 +10,13 @@ from functools import reduce
 from itertools import groupby, product
 from typing import Set, List, Callable, TypeVar, Optional
 
-from jinja2 import Environment, select_autoescape, FileSystemLoader, PackageLoader
+from jinja2 import Environment, select_autoescape, PackageLoader
 
 from mahjong.container.pattern.reasoning import HeuristicPatternMatchWaiting
 from mahjong.container.pattern.win import NormalTypeWin, UniquePairs
 from mahjong.container.set import TileSet
 from mahjong.record.category import MixedCategory, SubCategory
-from mahjong.record.reader import from_url, log_id_from_url
+from mahjong.record.reader import from_url, log_id_from_url, log_id_to_url
 from mahjong.record.state import PlayerHand, InvisibleTiles, PlayerMeld
 from mahjong.record.utils import event
 from mahjong.record.utils.value.meld import Kita
@@ -158,29 +158,32 @@ def main():
 
     template = env.get_template("record_checker_template.html")
     for player in planned_players:
-        file_name = render_template(log_url, player, record, template)
-
+        file_name, rendered_str = render_template(player, record, template, log_url)
+        with open(file_name, "w+", encoding='utf-8') as result_file:
+            result_file.write(rendered_str)
         print("report has been saved to", os.path.abspath(file_name))
 
 
-def render_template(log_url, player, record, template):
+def render_template(player, record, template, log_url=None, log_id=None, generate_filename=True):
     games = [GameAnalysis(str(game), game_reason_list(game, player, record)) for game in record.game_list]
-    file_name = "tenhou_record_%s_%s_%d.html" % (log_id_from_url(log_url), player.name, player.index)
-    with open(file_name, "w+", encoding='utf-8') as result_file:
-        all_tiles = [''.join(str(x) for x in item) for item in
-                     list((n, t) for t in "mps" for n in range(0, 10)) + list(product(range(1, 8), "z"))]
-        result_file.write(template.render(
-            player=str(player),
-            record=str(record),
-            log_url=log_url,
-            games=games,
-            all_tiles=all_tiles
-        ))
-    return file_name
+    if log_url is not None:
+        log_id = log_id_from_url(log_url)
+    elif log_id is not None:
+        log_url = log_id_to_url(log_id)
+    elif generate_filename:
+        raise ValueError("you must provide either log_url or log_id to generate filename")
+    all_tiles = [''.join(str(x) for x in item) for item in
+                 list((n, t) for t in "mps" for n in range(0, 10)) + list(product(range(1, 8), "z"))]
+    render_str = template.render(player=str(player), record=str(record), log_url=log_url, games=games,
+                                 all_tiles=all_tiles)
+    if generate_filename:
+        return "tenhou_record_%s_%s_%d.html" % (log_id, player.name, player.index), render_str
+    else:
+        return render_str
 
 
 def game_reason_list(game, player, record):
-    ("start game", game)
+    logger.info("start game {}", game)
     hand_state = PlayerHand(player)
     player_meld_state = PlayerMeld(player)
     invisible_tiles_state = InvisibleTiles(len(record.players))
