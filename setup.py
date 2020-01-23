@@ -17,6 +17,7 @@ setup(
     entry_points={
         'console_scripts': [
             'tenhou-check = mahjong.tenhou_record_check:main',
+            'mahjong-win-rate = mahjong.win_rate_demo:main',
         ]
     }
 )
