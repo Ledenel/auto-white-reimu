@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-
+import functools
 import operator as op
 import os
+import base64
 from functools import reduce
-from itertools import groupby
+from itertools import groupby, product
 from typing import Set, List, Callable, TypeVar, Optional
 
-from jinja2 import Environment, select_autoescape, FileSystemLoader
+from jinja2 import Environment, select_autoescape, FileSystemLoader, PackageLoader
 
 from mahjong.container.pattern.reasoning import HeuristicPatternMatchWaiting
 from mahjong.container.pattern.win import NormalTypeWin, UniquePairs
@@ -46,6 +47,14 @@ def to_unicode_tile(tile: Tile) -> str:
     return chr(0x1f000 + index)
 
 
+def to_plain_tile(tile: Tile) -> str:
+    return str(tile)
+
+
+def join_tiles(items):
+    return list(items)
+
+
 class ReasoningItem:
     def __init__(self, discard_tile: Tile, waiting_step: int, useful_tiles: Set[Tile],
                  useful_tiles_count: int):
@@ -57,8 +66,8 @@ class ReasoningItem:
 
     def norm(self):
         if not self._normed:
-            self.discard_tile = to_unicode_tile(self.discard_tile)
-            self.useful_tiles = "".join(to_unicode_tile(x) for x in sorted(self.useful_tiles))
+            self.discard_tile = join_tiles([to_plain_tile(self.discard_tile)])
+            self.useful_tiles = join_tiles(to_plain_tile(x) for x in sorted(self.useful_tiles))
             self._normed = True
 
 
@@ -109,36 +118,66 @@ def find_in_list(lst: List[T], key: Callable[[T], bool]) -> Optional[T]:
     return next((x for x in lst if key(x)), None)
 
 
-def main():
-    log_url = input('Input your tenhou.net log link:').strip()
-    name = input('Input your tenhou.net display name(default to check all players):').strip('\n')
-    record = from_url(log_url, 10)
-    planned_players = record.players.copy()
-    if name.strip():
-        player = next((x for x in record.players if x.name == name), None)
-        if player is None:
-            raise ValueError("Player '%s' not found in record %s." % (name, record))
-        planned_players = [player]
+import pkg_resources
+
+
+def load_raw(resource, resource_path):
+    return pkg_resources.resource_string(resource_path, resource)
+
+
+def template_env(template_path):
     env = Environment(
-        loader=FileSystemLoader('mahjong/templates'),
+        loader=PackageLoader(template_path),
         autoescape=select_autoescape(['html', 'xml'])
     )
+    env.filters['load_raw'] = load_raw
+    env.filters['b64encode'] = lambda t: base64.standard_b64encode(t).decode()
+    return env
+
+
+def main():
+    log_url = input('Input your tenhou.net log link:').strip()
+    record = from_url(log_url, 10)
+    print('read successful. pick a number to select player:')
+    for i, player in enumerate(record.players):
+        print("[{id}]: {player}".format(
+            id=i + 1,
+            player=str(player)
+        ))
+    input_id = input("please select a number[1-{n}] as player id , otherwise for all players:".format(
+        n=len(record.players)
+    ))
+    planned_players = record.players.copy()
+    if input_id.isdigit():
+        input_id = int(input_id)
+        if input_id in range(1, len(record.players) + 1):
+            player = record.players[input_id - 1]
+            planned_players = [player]
+    # template_path = 'mahjong/templates'
+    env = template_env("mahjong")
+
     template = env.get_template("record_checker_template.html")
-
     for player in planned_players:
-
-        games = [GameAnalysis(str(game), game_reason_list(game, player, record)) for game in record.game_list]
-
-        file_name = "tenhou_record_%s_%s.html" % (log_id_from_url(log_url), player.name)
-        with open(file_name, "w+", encoding='utf-8') as result_file:
-            result_file.write(template.render(
-                player=str(player),
-                record=str(record),
-                log_url=log_url,
-                games=games
-            ))
+        file_name = render_template(log_url, player, record, template)
 
         print("report has been saved to", os.path.abspath(file_name))
+
+
+def render_template(log_url, player, record, template):
+    games = [GameAnalysis(str(game), game_reason_list(game, player, record)) for game in record.game_list]
+    file_name = "tenhou_record_%s_%s_%d.html" % (log_id_from_url(log_url), player.name, player.index)
+    with open(file_name, "w+", encoding='utf-8') as result_file:
+        all_tiles = [''.join(str(x) for x in item) for item in
+                     list((n, t) for t in "mps" for n in range(0, 10)) + list(product(range(1, 8), "z"))]
+        # print(all_tiles)
+        result_file.write(template.render(
+            player=str(player),
+            record=str(record),
+            log_url=log_url,
+            games=games,
+            all_tiles=all_tiles
+        ))
+    return file_name
 
 
 def game_reason_list(game, player, record):
@@ -208,10 +247,10 @@ def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, 
     for item in merged_win_reasonings:
         item.norm()
 
-    hand_str = ''.join(to_unicode_tile(x) for x in hand.tiles())
+    hand_str = join_tiles(to_plain_tile(x) for x in hand.tiles())
     meld_strs = [
-        ''.join(to_unicode_tile(tile_from_tenhou(x))
-                for x in list(meld.self_tiles) + list(meld.borrowed_tiles))
+        join_tiles(to_plain_tile(tile_from_tenhou(x))
+                   for x in list(meld.self_tiles) + list(meld.borrowed_tiles))
         for meld in player_meld_state.value
 
     ]

@@ -10,6 +10,26 @@
             padding-right: 12px;
         }
 
+        {% for tile_name in all_tiles %}
+            .pic{{ tile_name }} {
+                background-image: url("data:image/png;base64,{{ (tile_name + '.png') | load_raw("mahjong.templates.mjpic") | b64encode | safe}}");
+            }
+        {% endfor %}
+
+        .big {
+            width: 24px;
+            height: 30px;
+            display: inline-block;
+            background-size: cover;
+        }
+
+        .small {
+            width: 16px;
+            height: 20px;
+            display: inline-block;
+            background-size: cover;
+        }
+
         .tile-small {
             letter-spacing: -7.5px;
             font-size: 24px;
@@ -39,13 +59,44 @@
         .hint-blue {
             background-color: blue;
         }
+
+        .description-table {
+            display: inline-table;
+        }
     </style>
 </head>
 <body>
 
-<p class="tile">🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡</p>
-<p class="tile-small">🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡</p>
+{#<p class="tile">🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡</p>#}
+{#<p class="tile-small">🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡</p>#}
 
+{% macro tile(tile_list, size) -%}
+    {% for tile_item in tile_list -%}
+        <div class="pic{{ tile_item }} {{ size }}"></div>
+    {%- endfor %}
+{%- endmacro %}
+
+{% macro reasoning_display(selected) -%}
+    {% for reasoning in selected %}
+        <div class="reasoning-tile">
+            <div>Discard&nbsp;{{ tile(reasoning.discard_tile, 'small') }}
+                {{ reasoning.waiting_step }}
+                Steps
+                {{ reasoning.useful_tiles_count }} Tiles
+            </div>
+            <div>Expect {{ tile(reasoning.useful_tiles, 'small') }}
+            </div>
+        </div>
+    {% endfor %}
+{%- endmacro %}
+
+
+{{ tile(all_tiles, 'big') }}
+
+<hr>
+
+{{ tile(all_tiles, 'small') }}
+{#    <img src="data:image/png;base64,{{ ('mjpic/' + tile_name + '.png') | load_raw | b64encode | safe}}">#}
 <p> Player: {{ player }} </p>
 <p>{{ record }} <a href="{{ log_url }}">Link</a></p>
 
@@ -77,66 +128,44 @@
                     <tr style="background-color: {% if round.somebody_richii %} rgba(0, 0, 255, {% else %} rgba(255, 0, 0, {% endif %}{{ round.wrong_rate }});">
                         <td>{{ loop.index }}</td>
                         <td>
-                            {% for meld in round.melds %}<span class="tile">{{ meld }}</span>{% endfor %}<span
-                                class="tile">{{ round.hand }}</span>
+                            {% for meld in round.melds %}{{ tile(meld, 'big') }}&nbsp;{% endfor %}
+                            {{ tile(round.hand, 'big') }}
                         </td>
-                        <td class="tile">{{ round.your_choice_reasoning.discard_tile }}</td>
+                        <td class="tile">{{ tile(round.your_choice_reasoning.discard_tile, 'big') }}</td>
                         <td class="tile">
-                            {% for reasoning in round.expected_reasonings %}{{ reasoning.discard_tile }}{% endfor %}
+                            {% for reasoning in round.expected_reasonings %}
+                                {{ tile(reasoning.discard_tile, 'big') }}{% endfor %}
                         </td>
                         <td>
                             <details>
                                 <summary>
-                                    Expected: Steps {{ round.expected_reasonings[0].waiting_step }}
-                                    Tiles {{ round.expected_reasonings[0].useful_tiles_count }},
-                                    Actual: Steps {{ round.your_choice_reasoning.waiting_step }}
-                                    Tiles {{ round.your_choice_reasoning.useful_tiles_count }}
+                                    <table class="description-table">
+                                        <tr>
+                                            <td>Expected</td>
+                                            <td>Steps {{ round.expected_reasonings[0].waiting_step }}
+                                        Tiles {{ round.expected_reasonings[0].useful_tiles_count }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Actual</td>
+                                            <td>Steps {{ round.your_choice_reasoning.waiting_step }}
+                                        Tiles {{ round.your_choice_reasoning.useful_tiles_count }}</td>
+                                        </tr>
+                                    </table>
                                 </summary>
-                                {% for reasoning in round.merged_reasoning %}
-                                    <div class="reasoning-tile">
-                                        <div>Discard<span
-                                                class="tile-small">{{ reasoning.discard_tile }}</span>{{ reasoning.waiting_step }}
-                                            Steps
-                                            {{ reasoning.useful_tiles_count }} Tiles
-                                        </div>
-                                        <div>Expect<span class="tile-small">{{ reasoning.useful_tiles }}</span>
-                                        </div>
-                                    </div>
-                                {% endfor %}
+                                {{ reasoning_display(round.merged_reasoning) }}
                                 <details>
                                     <summary>
                                         Normal-Type Reasoning
                                     </summary>
-                                    {% for reasoning in round.normal_reasonings %}
-                                        <div class="reasoning-tile">
-                                            <div>Discard<span
-                                                    class="tile-small">{{ reasoning.discard_tile }}</span>{{ reasoning.waiting_step }}
-                                                Steps
-                                                {{ reasoning.useful_tiles_count }} Tiles
-                                            </div>
-                                            <div>Expect<span class="tile-small">{{ reasoning.useful_tiles }}</span>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
+                                    {{ reasoning_display(round.normal_reasonings) }}
                                 </details>
                                 <details>
                                     <summary>
                                         Seven-Pair Reasoning
                                     </summary>
-                                    {% for reasoning in round.seven_pair_reasonings %}
-                                        <div class="reasoning-tile">
-                                            <div>Discard<span
-                                                    class="tile-small">{{ reasoning.discard_tile }}</span>{{ reasoning.waiting_step }}
-                                                Steps
-                                                {{ reasoning.useful_tiles_count }} Tiles
-                                            </div>
-                                            <div>Expect<span class="tile-small">{{ reasoning.useful_tiles }}</span>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
+                                    {{ reasoning_display(round.seven_pair_reasonings) }}
                                 </details>
                             </details>
-
                         </td>
                     </tr>
                 {% endfor %}
