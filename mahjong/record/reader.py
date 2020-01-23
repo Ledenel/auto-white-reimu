@@ -35,6 +35,10 @@ def log_id_from_url(view_url):
     return log_id
 
 
+def log_id_to_url(log_id):
+    return "http://tenhou.net/0/?log={}".format(log_id)
+
+
 def is_game_end(event):
     return is_somebody_win_game(event) or is_nobody_win_game(event)
 

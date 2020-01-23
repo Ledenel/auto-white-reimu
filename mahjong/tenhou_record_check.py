@@ -1,19 +1,22 @@
 # -*- coding: utf-8 -*-
-import functools
 import operator as op
-import os
 import base64
+import os
+
+import pkg_resources
+
+from loguru import logger
 from functools import reduce
 from itertools import groupby, product
 from typing import Set, List, Callable, TypeVar, Optional
 
-from jinja2 import Environment, select_autoescape, FileSystemLoader, PackageLoader
+from jinja2 import Environment, select_autoescape, PackageLoader
 
 from mahjong.container.pattern.reasoning import HeuristicPatternMatchWaiting
 from mahjong.container.pattern.win import NormalTypeWin, UniquePairs
 from mahjong.container.set import TileSet
 from mahjong.record.category import MixedCategory, SubCategory
-from mahjong.record.reader import from_url, log_id_from_url
+from mahjong.record.reader import from_url, log_id_from_url, log_id_to_url
 from mahjong.record.state import PlayerHand, InvisibleTiles, PlayerMeld
 from mahjong.record.utils import event
 from mahjong.record.utils.value.meld import Kita
@@ -118,9 +121,6 @@ def find_in_list(lst: List[T], key: Callable[[T], bool]) -> Optional[T]:
     return next((x for x in lst if key(x)), None)
 
 
-import pkg_resources
-
-
 def load_raw(resource, resource_path):
     return pkg_resources.resource_string(resource_path, resource)
 
@@ -158,30 +158,32 @@ def main():
 
     template = env.get_template("record_checker_template.html")
     for player in planned_players:
-        file_name = render_template(log_url, player, record, template)
-
+        file_name, rendered_str = render_template(player, record, template, log_url)
+        with open(file_name, "w+", encoding='utf-8') as result_file:
+            result_file.write(rendered_str)
         print("report has been saved to", os.path.abspath(file_name))
 
 
-def render_template(log_url, player, record, template):
+def render_template(player, record, template, log_url=None, log_id=None, generate_filename=True):
     games = [GameAnalysis(str(game), game_reason_list(game, player, record)) for game in record.game_list]
-    file_name = "tenhou_record_%s_%s_%d.html" % (log_id_from_url(log_url), player.name, player.index)
-    with open(file_name, "w+", encoding='utf-8') as result_file:
-        all_tiles = [''.join(str(x) for x in item) for item in
-                     list((n, t) for t in "mps" for n in range(0, 10)) + list(product(range(1, 8), "z"))]
-        # print(all_tiles)
-        result_file.write(template.render(
-            player=str(player),
-            record=str(record),
-            log_url=log_url,
-            games=games,
-            all_tiles=all_tiles
-        ))
-    return file_name
+    if log_url is not None:
+        log_id = log_id_from_url(log_url)
+    elif log_id is not None:
+        log_url = log_id_to_url(log_id)
+    elif generate_filename:
+        raise ValueError("you must provide either log_url or log_id to generate filename")
+    all_tiles = [''.join(str(x) for x in item) for item in
+                 list((n, t) for t in "mps" for n in range(0, 10)) + list(product(range(1, 8), "z"))]
+    render_str = template.render(player=str(player), record=str(record), log_url=log_url, games=games,
+                                 all_tiles=all_tiles)
+    if generate_filename:
+        return "tenhou_record_%s_%s_%d.html" % (log_id, player.name, player.index), render_str
+    else:
+        return render_str
 
 
 def game_reason_list(game, player, record):
-    print("start game", game)
+    logger.info("start game {}", game)
     hand_state = PlayerHand(player)
     player_meld_state = PlayerMeld(player)
     invisible_tiles_state = InvisibleTiles(len(record.players))
@@ -207,7 +209,7 @@ def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, 
     invisible_player_perspective = invisible_tiles_state.value - set(hand_state.value)
     meld_count = sum(1 for meld in player_meld_state.value if not isinstance(meld, Kita))
     hand = TileSet(tile_from_tenhou(index) for index in hand_state.value)
-    print("reasoning", hand)
+    logger.info("reasoning {}", hand)
     win_types = [NormalTypeWin(melds=4 - meld_count)]
     reasoning_names = ["normal_reasonings", "seven_pair_reasonings"]
     if meld_count == 0:
@@ -260,7 +262,7 @@ def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, 
         wrong_rate, False
     )
 
-    print("reasoned", hand)
+    logger.info("reasoned {}", hand)
 
     for name, win_reason in zip(reasoning_names, win_reasonings):
         for item in win_reason:
