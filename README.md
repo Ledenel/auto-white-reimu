@@ -49,6 +49,20 @@ follow the hint.
 
 it will generate a html report for easy checking.
 
+You could also use it programmatically:
+
+```python
+from mahjong.record.checker import TenhouChecker
+filename, results = TenhouChecker().parse(
+    "http://tenhou.net/0/?log=2018111815gm-00a9-0000-504304e3", 
+    player_index=1,
+    timeout=15,
+    generate_filename=True
+)
+with open(filename, "w", encoding='utf-8') as f:
+    f.write(results)
+```
+
 ## Testing
 
 you could run test by executing `pip install .[test]` at root dir, this would install all dependence for you.
