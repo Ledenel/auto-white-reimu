@@ -117,10 +117,13 @@ T = TypeVar("T")
 def find_in_list(lst: List[T], key: Callable[[T], bool]) -> Optional[T]:
     return next((x for x in lst if key(x)), None)
 
+
 import pkg_resources
+
 
 def load_raw(resource, resource_path):
     return pkg_resources.resource_string(resource_path, resource)
+
 
 def template_env(template_path):
     env = Environment(
@@ -134,14 +137,22 @@ def template_env(template_path):
 
 def main():
     log_url = input('Input your tenhou.net log link:').strip()
-    name = input('Input your tenhou.net display name(default to check all players):').strip('\n')
     record = from_url(log_url, 10)
+    print('read successful. pick a number to select player:')
+    for i, player in enumerate(record.players):
+        print("[{id}]: {player}".format(
+            id=i + 1,
+            player=str(player)
+        ))
+    input_id = input("please select a number[1-{n}] as player id , otherwise for all players:".format(
+        n=len(record.players)
+    ))
     planned_players = record.players.copy()
-    if name.strip():
-        player = next((x for x in record.players if x.name == name), None)
-        if player is None:
-            raise ValueError("Player '%s' not found in record %s." % (name, record))
-        planned_players = [player]
+    if input_id.isdigit():
+        input_id = int(input_id)
+        if input_id in range(1, len(record.players) + 1):
+            player = record.players[input_id - 1]
+            planned_players = [player]
     # template_path = 'mahjong/templates'
     env = template_env("mahjong")
 
@@ -154,7 +165,7 @@ def main():
 
 def render_template(log_url, player, record, template):
     games = [GameAnalysis(str(game), game_reason_list(game, player, record)) for game in record.game_list]
-    file_name = "tenhou_record_%s_%s.html" % (log_id_from_url(log_url), player.name)
+    file_name = "tenhou_record_%s_%s_%d.html" % (log_id_from_url(log_url), player.name, player.index)
     with open(file_name, "w+", encoding='utf-8') as result_file:
         all_tiles = [''.join(str(x) for x in item) for item in
                      list((n, t) for t in "mps" for n in range(0, 10)) + list(product(range(1, 8), "z"))]
@@ -167,7 +178,6 @@ def render_template(log_url, player, record, template):
             all_tiles=all_tiles
         ))
     return file_name
-
 
 
 def game_reason_list(game, player, record):
