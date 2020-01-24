@@ -13,11 +13,10 @@ jobs:
         python-version: 3.8
     - name: Setup Project dependencies
       run: |
-        pip install pipenv
-        pipenv sync
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
     - name: Build windows exectuable
       run: |
-        pipenv shell
         ./pyinstaller-build.bat
     - name: Publish to github
       uses: skx/github-action-publish-binaries@master

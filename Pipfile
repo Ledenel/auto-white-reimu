@@ -10,6 +10,7 @@ pandas = "*"
 pytest = "*"
 pyinstaller = "*"
 setuptools = "==44.0.0"
+pipenv-to-requirements = "*"
 
 [packages]
 numpy = "*"
