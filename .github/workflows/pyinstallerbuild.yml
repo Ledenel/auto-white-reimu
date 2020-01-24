@@ -1,10 +1,15 @@
 name: Pyinstaller build windows exectuable
 
-on: release
+on:
+  release:
+    types: [created]
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
     steps:
     - uses: actions/checkout@v1
     - name: Setup Python environment
@@ -15,13 +20,14 @@ jobs:
       run: |
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
-    - name: Build windows exectuable
+    - name: Build exectuable
       run: |
         ./pyinstaller-build.bat
+      shell: bash
     - name: Publish to github
       run: |
         chmod +x upload-script.sh
-        ./upload-script.sh 'dist/*.exe'
+        ./upload-script.sh 'dist/*'
       shell: bash
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
