@@ -22,7 +22,7 @@ jobs:
         pip install -r requirements-dev.txt
     - name: Build exectuable
       run: |
-        ./pyinstaller-build.bat
+        python pyinstaller_build.py
       shell: bash
     - name: Publish to github
       run: |

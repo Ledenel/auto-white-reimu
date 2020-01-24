@@ -1,3 +1,4 @@
+import os
 from collections import Counter, defaultdict
 from time import perf_counter
 
@@ -99,6 +100,7 @@ def main():
                win_count * 100 / try_count,
                win_count, try_count
                , rough * 100, infinite * 100))
+    os.system('pause')
 
 
 if __name__ == '__main__':
