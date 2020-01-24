@@ -7,6 +7,14 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
+    - name: Setup Python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: 3.8
+    - name: Setup Project dependencies
+      run: |
+        pip install pipenv
+        pipenv sync
     - name: Build windows exectuable
       run: ./pyinstaller-build.bat
     - name: Publish to github
