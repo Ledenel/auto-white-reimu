@@ -10,6 +10,17 @@ A mahjong library aimed to implement mahjong AIs by imitating white reimu -- a e
 
 ## Installation
 
+## Pre-built
+
+If you only want the features, there are pre-built binaries for each feature:
+[release](https://github.com/Ledenel/auto-white-reimu/releases)
+
+.exe is for Windows and binary with no extention is for Mac OS.
+
+> Running first time is usually slower (due to some intitalization in PyInstaller). 
+
+## For Developers
+
 Install python 3.7 or later, then just use pip:
 
 `pip install auto-white-reimu`
