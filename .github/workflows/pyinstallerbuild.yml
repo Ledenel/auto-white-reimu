@@ -15,6 +15,7 @@ jobs:
       run: |
         pip install pipenv
         pipenv sync
+        pipenv shell
     - name: Build windows exectuable
       run: ./pyinstaller-build.bat
     - name: Publish to github
