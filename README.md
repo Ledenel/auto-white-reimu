@@ -13,7 +13,7 @@ A mahjong library aimed to implement mahjong AIs by imitating white reimu -- a e
 ## Pre-built
 
 If you only want the features, there are pre-built binaries for each feature:
-(https://github.com/Ledenel/auto-white-reimu/releases)[release]
+[release](https://github.com/Ledenel/auto-white-reimu/releases)
 
 .exe is for Windows and binary with no extention is for Mac OS.
 
