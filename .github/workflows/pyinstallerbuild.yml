@@ -19,8 +19,9 @@ jobs:
       run: |
         ./pyinstaller-build.bat
     - name: Publish to github
-      uses: skx/github-action-publish-binaries@master
+      run: |
+        chmod +x upload-script.sh
+        ./upload-script.sh 'dist/*.exe'
+      shell: bash
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        args: 'dist/*.exe'
