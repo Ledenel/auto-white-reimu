@@ -1,4 +1,5 @@
 import logging
+from enum import Enum, auto, Flag
 from xml.etree.ElementTree import Element
 
 from mahjong.record.utils.bit import unpack_with
@@ -62,9 +63,38 @@ def discard_tile_change(event):
     return tile_change(event, DISCARD_GROUPED_REGEX, DISCARD_INDICATOR)
 
 
+
+
+class TenhouSubEvent:
+    def __init__(self, event_type,
+                 player_index=None,
+                 player_hand=None,
+                 player_hand_delta=None,
+                 player_meld=None,
+                 player_meld_delta=None,
+                 player_see=None,
+                 player_see_delta=None,
+                 player_show=None,
+                 player_show_delta=None,
+                 score=None,
+                 score_delta=None,
+                 **kwargs):
+        pass
+
+
 class TenhouEvent:
     def __init__(self, xml_element: Element):
         self._wrapped_xml_event = xml_element
+        draw = draw_tile_change(xml_element)
+        if draw:
+            self.player_index_ = draw['player']
+            self.see_tiles_ = [draw['tile']]
+        discard = discard_tile_change(xml_element)
+        if discard:
+            self.player_index_ = discard['player']
+            self.show_tiles_ = [discard['tile']]
+
+        # return "player {player} discard {tile}".format(**discard)
 
     def __getattr__(self, name):
         return getattr(self._wrapped_xml_event, name)
