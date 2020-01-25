@@ -2,7 +2,7 @@ import operator
 
 from typing import Iterable
 
-from mahjong.record.uni_format import *
+from mahjong.record.universe.format import *
 
 
 def null():
