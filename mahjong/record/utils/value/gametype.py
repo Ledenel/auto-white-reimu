@@ -20,13 +20,8 @@ GameTypeData = named_tuple_from_desc("game_type", game_type_desc)
 game_type_packer = bit_struct_from_desc(game_type_desc)
 
 
-def _pick(values, true_left, default=""):
-    if true_left:
-        return values[0]
-    elif len(values) > 1:
-        return values[1]
-    else:
-        return default
+def _if_value(condition, value_if_true, value_if_false=""):
+    return value_if_true if condition else value_if_false
 
 
 class GameType:
@@ -79,13 +74,13 @@ class GameType:
     def __str__(self) -> str:
         return "%s%s%s%s%s%s%s%s" % (
             "零一二三四"[self.player_count()],
-            _pick(["若銀琥孔", "般上特鳳"], self.with_tips())[self.play_level()],
+            _if_value(self.with_tips(), "若銀琥孔", "般上特鳳")[self.play_level()],
             "_東南西北"[self.play_wind_count()],
-            _pick("喰", self.allow_tanyao_open()),
-            _pick("赤", self.has_aka_dora()),
-            _pick("速", self.speed_up()),
-            _pick("暗", self.show_discard_shadow()),
-            _pick(["祝%d" % (self.tips_count())], self.with_tips()),
+            _if_value(self.allow_tanyao_open(), "喰"),
+            _if_value(self.has_aka_dora(), "赤"),
+            _if_value(self.speed_up(), "速"),
+            _if_value(self.show_discard_shadow(), "暗"),
+            _if_value(self.with_tips(), "祝%d" % (self.tips_count())),
         )
 
     def __repr__(self):

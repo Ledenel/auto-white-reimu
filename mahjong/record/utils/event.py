@@ -63,8 +63,6 @@ def discard_tile_change(event):
     return tile_change(event, DISCARD_GROUPED_REGEX, DISCARD_INDICATOR)
 
 
-
-
 class TenhouSubEvent:
     def __init__(self, event_type,
                  player_index=None,
@@ -83,8 +81,9 @@ class TenhouSubEvent:
 
 
 class TenhouEvent:
-    def __init__(self, xml_element: Element):
+    def __init__(self, xml_element: Element, *, context):
         self._wrapped_xml_event = xml_element
+        self.context_ = context
         draw = draw_tile_change(xml_element)
         if draw:
             self.player_index_ = draw['player']

@@ -22,16 +22,16 @@ def tile_change_tenhou(event, regex, indicator):
 
 
 def draw_tile_tenhou(event):
-    return tile_change(event, DRAW_GROUPED_REGEX, DRAW_INDICATOR)
+    return tile_change_tenhou(event, DRAW_GROUPED_REGEX, DRAW_INDICATOR)
 
 
 def discard_tile_tenhou(event):
-    return tile_change(event, DISCARD_GROUPED_REGEX, DISCARD_INDICATOR)
+    return tile_change_tenhou(event, DISCARD_GROUPED_REGEX, DISCARD_INDICATOR)
 
 
 @tenhou_matcher.match_names(DRAW_INDICATOR)
 def draw_command(event: TenhouEvent):
-    draw = draw_tile_change(event)
+    draw = draw_tile_tenhou(event)
     if draw:
         return [GameCommand(
             GameProperty(PlayerView.hand, Update.ADD),
@@ -42,7 +42,7 @@ def draw_command(event: TenhouEvent):
 
 @tenhou_matcher.match_names(DISCARD_INDICATOR)
 def discard_command(event: TenhouEvent):
-    discard = discard_tile_change(event)
+    discard = discard_tile_tenhou(event)
     if discard:
         return [GameCommand.multi_command([
             GameProperty(PlayerView.hand, Update.REMOVE),
@@ -51,3 +51,8 @@ def discard_command(event: TenhouEvent):
             sub_scope_id=discard['player'],
             value=tile_str_list([discard['tile']])
         )]
+
+@tenhou_matcher.match_name("INIT")
+def game_init_command(event: TenhouEvent):
+    raise NotImplemented
+    #TODO add prevailing and wind calculation.
