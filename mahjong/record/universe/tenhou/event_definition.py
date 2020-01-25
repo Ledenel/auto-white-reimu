@@ -1,5 +1,6 @@
 from typing import List, Union
 
+from mahjong.record.reader import TenhouGame
 from mahjong.record.universe.format import GameCommand, GameProperty, PlayerView, Update
 from mahjong.record.utils.event import *
 from mahjong.record.universe.tenhou.xml_macher import tenhou_command
@@ -33,26 +34,28 @@ def discard_tile_tenhou(event):
 def draw_command(event: TenhouEvent):
     draw = draw_tile_tenhou(event)
     if draw:
-        return [GameCommand(
+        yield GameCommand(
             GameProperty(PlayerView.hand, Update.ADD),
             sub_scope_id=draw['player'],
             value=tile_str_list([draw['tile']])
-        )]
+        )
 
 
 @tenhou_command.match_names(DISCARD_INDICATOR)
 def discard_command(event: TenhouEvent):
     discard = discard_tile_tenhou(event)
     if discard:
-        return [GameCommand.multi_command([
+        yield from GameCommand.multi_command([
             GameProperty(PlayerView.hand, Update.REMOVE),
             GameProperty(PlayerView.discard_tiles, Update.ADD)
         ],
             sub_scope_id=discard['player'],
             value=tile_str_list([discard['tile']])
-        )]
+        )
 
 @tenhou_command.match_name("INIT")
 def game_init_command(event: TenhouEvent):
+    game_context: TenhouGame = event.context_
+
     raise NotImplemented
     #TODO add prevailing and wind calculation.

@@ -59,8 +59,14 @@ class PlayerView(View):
     meld_public_tiles = auto()
     score = auto()
 
-    # public_tiles = discard_tiles | meld_public_tiles
-    # visible_tiles = public_tiles | hand
+# public_tiles =
+# GameView.dora_indicators |
+# PlayerView.discard_tiles |
+# PlayerView.meld_public_tiles
+
+# visible_tiles =
+# public_tiles |
+# hand
 
 
 def default_value_func(value):
@@ -165,7 +171,7 @@ class GameCommand:
 
 
 EventT = TypeVar['EventT']
-EventTransform = Callable[[EventT], List[GameCommand]]
+EventTransform = Callable[[EventT], Iterable[GameCommand]]
 
 
 class CommandTranslator:
@@ -176,7 +182,7 @@ class CommandTranslator:
     @staticmethod
     def fallback_call(event, matchers: List[EventTransform]) -> List[GameCommand]:
         for matcher in matchers:
-            value = matcher(event)
+            value = list(matcher(event))
             if value:
                 return value
 

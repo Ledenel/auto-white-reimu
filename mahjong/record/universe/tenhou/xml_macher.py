@@ -64,7 +64,7 @@ class TenhouCommandTranslator(CommandTranslator):
 
         for attr in event.attrib:
             if attr in self.attr_match:
-                return_value = TenhouCommandTranslator.fallback_call(
+                return_value = CommandTranslator.fallback_call(
                     event,
                     self.attr_match[attr]
                 )
