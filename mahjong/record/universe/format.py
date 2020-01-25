@@ -1,7 +1,9 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple, defaultdict
 from enum import Flag, auto, Enum, IntEnum
-from typing import Any, Callable
+from typing import Any, Callable, Iterable, TypeVar, List
+
+from loguru import logger
 
 
 class PlayerId(IntEnum):
@@ -131,6 +133,15 @@ class GameCommand:
         self.value = value
         self.prop = prop
 
+    @staticmethod
+    def multi_command(props: Iterable[GameProperty], sub_scope_id=None, value=None, timestamp=None):
+        return [GameCommand(
+            prop,
+            sub_scope_id=sub_scope_id,
+            value=value,
+            timestamp=timestamp
+        ) for prop in props]
+
     def to_record(self):
         return _Game_command(
             timestamp=self.timestamp,
@@ -152,3 +163,32 @@ class GameCommand:
             value=record.value,
             timestamp=record.timestamp,
         ),
+
+
+EventT = TypeVar['EventT']
+EventTransform = Callable[[EventT], List[GameCommand]]
+
+
+class EventMatcher:
+    def __init__(self):
+        self.defaults = []
+        self.defaults: List[EventTransform]
+
+    @staticmethod
+    def fallback_call(event, matchers: List[EventTransform]) -> List[GameCommand]:
+        for matcher in matchers:
+            value = matcher(event)
+            if value:
+                return value
+
+    def default_event(self, func: EventTransform) -> EventTransform:
+        self.defaults.append(func)
+        return func
+
+    def __call__(self, event: EventT) -> List[GameCommand]:
+        return_value = EventMatcher.fallback_call(event, self.defaults)
+        if return_value:
+            return return_value
+        else:
+            logger.warning("event {} is not transformed to game commands.", event)
+            return []
