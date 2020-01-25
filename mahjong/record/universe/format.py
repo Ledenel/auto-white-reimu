@@ -36,10 +36,9 @@ class View(Flag, metaclass=ABCMeta):
 
     @staticmethod
     def by_name(name):
-        for registered in View.registered_view().values():
-            if hasattr(registered, name):
-                return registered[name]
-        return None
+        return View.registered_view()[
+            ViewScope[name]
+        ]
 
 
 class GameView(View):
@@ -156,7 +155,7 @@ class GameCommand:
     def from_record(record: _Game_command):
         return GameCommand(
             GameProperty(
-                View.by_name(record.scope),
+                View.by_name(record.scope)[record.property],
                 Update[record.update_method],
             ),
             sub_scope_id=record.sub_scope_id,
@@ -181,7 +180,7 @@ class CommandTranslator:
             if value:
                 return value
 
-    #TODO: add preprocess and postprocess for event and command list. (to support timestamp attaching in tenhou).
+    # TODO: add preprocess and postprocess for event and command list. (to support timestamp attaching in tenhou).
 
     def default_event(self, func: EventTransform) -> EventTransform:
         self.defaults.append(func)
