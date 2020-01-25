@@ -169,7 +169,7 @@ EventT = TypeVar['EventT']
 EventTransform = Callable[[EventT], List[GameCommand]]
 
 
-class EventMatcher:
+class CommandTranslator:
     def __init__(self):
         self.defaults = []
         self.defaults: List[EventTransform]
@@ -181,12 +181,14 @@ class EventMatcher:
             if value:
                 return value
 
+    #TODO: add preprocess and postprocess for event and command list. (to support timestamp attaching in tenhou).
+
     def default_event(self, func: EventTransform) -> EventTransform:
         self.defaults.append(func)
         return func
 
     def __call__(self, event: EventT) -> List[GameCommand]:
-        return_value = EventMatcher.fallback_call(event, self.defaults)
+        return_value = CommandTranslator.fallback_call(event, self.defaults)
         if return_value:
             return return_value
         else:

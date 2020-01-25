@@ -2,11 +2,11 @@ from collections import defaultdict
 
 from typing import List, Callable
 
-from mahjong.record.universe.format import GameCommand, EventTransform, EventMatcher
+from mahjong.record.universe.format import GameCommand, EventTransform, CommandTranslator
 from mahjong.record.utils.event import TenhouEvent
 
 
-class TenhouEventMatcher(EventMatcher):
+class TenhouCommandTranslator(CommandTranslator):
     def __init__(self):
         super().__init__()
         self.name_match = defaultdict(list)
@@ -47,7 +47,7 @@ class TenhouEventMatcher(EventMatcher):
         for attr in event.attrib:
             both_key = (name, attr)
             if both_key in self.both_match:
-                return_value = EventMatcher.fallback_call(
+                return_value = CommandTranslator.fallback_call(
                     event,
                     self.both_match[both_key]
                 )
@@ -55,7 +55,7 @@ class TenhouEventMatcher(EventMatcher):
                     return return_value
 
         if name in self.name_match:
-            return_value = EventMatcher.fallback_call(
+            return_value = CommandTranslator.fallback_call(
                 event,
                 self.name_match[name]
             )
@@ -64,7 +64,7 @@ class TenhouEventMatcher(EventMatcher):
 
         for attr in event.attrib:
             if attr in self.attr_match:
-                return_value = TenhouEventMatcher.fallback_call(
+                return_value = TenhouCommandTranslator.fallback_call(
                     event,
                     self.attr_match[attr]
                 )
@@ -74,4 +74,4 @@ class TenhouEventMatcher(EventMatcher):
         return super()(event)
 
 
-tenhou_matcher = TenhouEventMatcher()
+tenhou_command = TenhouCommandTranslator()

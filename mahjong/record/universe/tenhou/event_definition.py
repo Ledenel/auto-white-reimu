@@ -2,7 +2,7 @@ from typing import List, Union
 
 from mahjong.record.universe.format import GameCommand, GameProperty, PlayerView, Update
 from mahjong.record.utils.event import *
-from mahjong.record.universe.tenhou.xml_macher import tenhou_matcher
+from mahjong.record.universe.tenhou.xml_macher import tenhou_command
 
 
 def tile_str_list(tile_list: Union[str, List[int]]):
@@ -29,7 +29,7 @@ def discard_tile_tenhou(event):
     return tile_change_tenhou(event, DISCARD_GROUPED_REGEX, DISCARD_INDICATOR)
 
 
-@tenhou_matcher.match_names(DRAW_INDICATOR)
+@tenhou_command.match_names(DRAW_INDICATOR)
 def draw_command(event: TenhouEvent):
     draw = draw_tile_tenhou(event)
     if draw:
@@ -40,7 +40,7 @@ def draw_command(event: TenhouEvent):
         )]
 
 
-@tenhou_matcher.match_names(DISCARD_INDICATOR)
+@tenhou_command.match_names(DISCARD_INDICATOR)
 def discard_command(event: TenhouEvent):
     discard = discard_tile_tenhou(event)
     if discard:
@@ -52,7 +52,7 @@ def discard_command(event: TenhouEvent):
             value=tile_str_list([discard['tile']])
         )]
 
-@tenhou_matcher.match_name("INIT")
+@tenhou_command.match_name("INIT")
 def game_init_command(event: TenhouEvent):
     raise NotImplemented
     #TODO add prevailing and wind calculation.
