@@ -25,8 +25,7 @@ class ViewScope(Flag):
         }
 
 
-class View(Flag, metaclass=ABCMeta):
-
+class View:
     @staticmethod
     def registered_view():
         return {
@@ -41,7 +40,7 @@ class View(Flag, metaclass=ABCMeta):
         ]
 
 
-class GameView(View):
+class GameView(View, Flag):
     wind = auto()
     round = auto()
     sub_round = auto()
@@ -50,7 +49,7 @@ class GameView(View):
     oya = auto()
 
 
-class PlayerView(View):
+class PlayerView(View, Flag):
     name = auto()
     level = auto()
     extra_level = auto()
@@ -131,15 +130,15 @@ _Game_command = namedtuple(
 
 
 class GameCommand:
-    def __init__(self, view_property: View, update_method: Update, sub_scope_id=None, value=None, timestamp=None):
+    def __init__(self, *, prop: View, update: Update, sub_scope=None, value=None, timestamp=None):
         self.timestamp = timestamp
         # if value is None and prop.default_ctor is not None and prop.update_method != Update.CLEAR:
         #     self.value = prop.default_ctor()
         # else:
-        self.sub_scope_id = sub_scope_id
+        self.sub_scope_id = sub_scope
         self.value = value
-        self.property = view_property
-        self.update_method = update_method
+        self.property = prop
+        self.update_method = update
         self.prop = GameProperty(self.property, self.update_method)
 
     # @staticmethod
@@ -164,15 +163,15 @@ class GameCommand:
     @staticmethod
     def from_record(record: _Game_command):
         return GameCommand(
-            View.by_name(record.scope)[record.property],
-            Update[record.update_method],
-            sub_scope_id=record.sub_scope_id,
+            prop=View.by_name(record.scope)[record.property],
+            update=Update[record.update_method],
+            sub_scope=record.sub_scope_id,
             value=record.value,
             timestamp=record.timestamp,
         ),
 
 
-EventT = TypeVar['EventT']
+EventT = TypeVar('EventT')
 EventTransform = Callable[[EventT], Iterable[GameCommand]]
 
 
@@ -194,10 +193,16 @@ class CommandTranslator:
         self.defaults.append(func)
         return func
 
+    def translate(self, event: EventT) -> List[GameCommand]:
+        pass
+
     def __call__(self, event: EventT) -> List[GameCommand]:
+        return_value = self.translate(event)
+        if return_value:
+            return return_value
         return_value = CommandTranslator.fallback_call(event, self.defaults)
         if return_value:
             return return_value
         else:
-            logger.warning("event {} is not transformed to game commands.", event)
+            logger.warning("event <{}> is not transformed to game commands.", event)
             return []

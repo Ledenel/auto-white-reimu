@@ -82,4 +82,4 @@ class Builder:
 
     def __call__(self, **kwargs):
         with self.when(**kwargs):
-            return self.ctor(**self.inner_state)
+            return self.ctor(**self.inner_state.merged_dict)

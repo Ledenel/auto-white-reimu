@@ -42,7 +42,7 @@ class TenhouCommandTranslator(CommandTranslator):
 
         return _matcher_decor
 
-    def __call__(self, event: TenhouEvent) -> List[GameCommand]:
+    def translate(self, event: TenhouEvent) -> List[GameCommand]:
         name = event.tag
         for attr in event.attrib:
             both_key = (name, attr)
@@ -70,8 +70,6 @@ class TenhouCommandTranslator(CommandTranslator):
                 )
                 if return_value:
                     return return_value
-
-        return super()(event)
 
 
 tenhou_command = TenhouCommandTranslator()
