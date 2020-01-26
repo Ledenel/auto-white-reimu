@@ -8,6 +8,14 @@ def null():
     return None
 
 
+prop_manager = PropertyTypeManager()
+
+
+@prop_manager.register_default_ctor(ViewType.list)
+def empty_list():
+    return []
+
+
 defaultExecutor = {
     Update.RESET_DEFAULT: null,
     Update.ADD: operator.add,
@@ -20,7 +28,6 @@ def fill_value_executor(value):
         return value
 
     return {
-        Update.RESET_DEFAULT: default_val,
         Update.ADD: operator.add,
         Update.REMOVE: operator.sub,
     }
@@ -34,13 +41,11 @@ def remove_all(lst: list, values: list):
 
 
 listExecutor = {
-    Update.RESET_DEFAULT: list,
     Update.ADD: operator.add,
     Update.REMOVE: remove_all,
 }
 
 setExecutor = {
-    Update.RESET_DEFAULT: set,
     Update.ADD: operator.or_,
     Update.REMOVE: operator.sub,
 }
@@ -70,7 +75,7 @@ class CombinedCommandExecutor:
                 elif method.operand_num() == 1:
                     return executor[method](command.value)
                 elif method.operand_num() == 0:
-                    return executor[method]()
+                    raise ValueError("Zero operand is not supported. Type of None value may be ambiguous.")
 
 
 class GameExecutor:
@@ -85,7 +90,7 @@ class GameExecutor:
                 "single": {},
             } if multi_value is None else {
                 key: {} for key in multi_value
-            } for enum, multi_value in ViewScope.scopes_with_multi_value().items(),
+            } for enum, multi_value in ViewScope.scopes_with_multi_value().items()
         }
         all_dict = {
             "time": {
@@ -100,11 +105,11 @@ class GameExecutor:
     @staticmethod
     def state_value(state_dict, command: GameCommand):
         scope_key = command.prop.scope
-        multi_values = View.registered_view()[scope_key]
+        multi_values = ViewScope.scopes_with_multi_value()[scope_key]
         if multi_values is None:
             return state_dict[scope_key]["single"]
         else:
-            return multi_values(command.sub_scope_id)
+            return state_dict[scope_key][multi_values(command.sub_scope_id)]
 
     def execute(self, commands: Iterable[GameCommand]):
         curr_state = self.states
@@ -115,27 +120,26 @@ class GameExecutor:
     def execute_update_state(self, command, curr_state):
         method = command.prop.update_method
         view = GameExecutor.state_value(curr_state, command)
+        view_property = command.prop.view_property
         if method == Update.REPLACE:
-            curr_state = view.set(
-                command.prop.view_property,
+            result_state = view.set(
+                view_property,
                 command.value
             )
         elif method == Update.CLEAR:
-            curr_state = view.drop(command.prop.view_property)
+            result_state = view.drop(view_property)
         elif method == Update.ADD or method == Update.REMOVE:
-            curr_state = view.set(
-                command.prop.view_property,
+            result_state = view.set(
+                view_property,
                 self.executor.execute_value(
-                    command, view[command.prop.view_property]
+                    command, view[view_property]
                 ),
             )
         elif method == Update.RESET_DEFAULT:
-            curr_state = view.set(
-                command.prop.view_property,
-                self.executor.execute_value(
-                    command
-                ),
+            result_state = view.set(
+                view_property,
+                prop_manager.get_default(view_property),
             )
         else:
             raise ValueError("unrecognized", method)
-        return curr_state
+        return result_state

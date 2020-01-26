@@ -13,19 +13,39 @@ class TransferDict:
     def __getattr__(self, item):
         return getattr(self.nested_dict, item)
 
+    def __getitem__(self, item):
+        return self.nested_dict[item]
+
+    def __str__(self):
+        return str(self.nested_dict)
+
+    def __repr__(self):
+        return repr(self.nested_dict)
+
     def _readonly(self, *args, **kwards):
         raise NotImplemented
 
-    __setattr__ = __setitem__ = __delattr__ = pop = update = popitem = _readonly
+    __setitem__ = __delattr__ = pop = update = popitem = _readonly
 
     def set(self, key, value):
-        modified = TransferDict({
-            **self,
+        modified_dict = {
+            **self.nested_dict,
             key: value
-        })
-        return self.parent.set(
-            self.parent_key, modified
-        ) if self.parent is not None else modified
+        }
+        modified = TransferDict(modified_dict, parent=self.parent, parent_key=self.parent_key)
+        if self.parent is not None:
+            return self.parent.set(
+                self.parent_key, modified
+            )
+        else:
+            # modified._update_link()
+            return modified
+
+    # def _update_link(self):
+    #     for k,v in self.nested_dict.items():
+    #         if isinstance(v, TransferDict):
+    #             v.parent = self
+    #             v.parent_key =
 
     def drop(self, key):
         dict_cpy = self.nested_dict.copy()
@@ -40,6 +60,14 @@ class TransferDict:
             return self.set(key, default)
         else:
             return self
+
+    def transfer_value(self, k, v):
+        if isinstance(v, dict):
+            return TransferDict(v, self, k)
+        elif isinstance(v, TransferDict):
+            return TransferDict(v.nested_dict, self, k)
+        else:
+            return v
 
 
 class StackedDict:

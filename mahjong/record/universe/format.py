@@ -6,11 +6,11 @@ from typing import Callable, Iterable, TypeVar, List
 from loguru import logger
 
 
-class PlayerId(IntEnum):
-    first = 0,
-    second = 1,
-    third = 2,
-    forth = 3,
+class PlayerId(Enum):
+    first = 0
+    second = 1
+    third = 2
+    forth = 3
 
 
 class ViewScope(Flag):
@@ -33,11 +33,98 @@ class View:
             ViewScope.player: PlayerView,
         }
 
+    @property
+    def scope(self):
+        for k, v in View.registered_view().items():
+            if isinstance(self, v):
+                return k
+
+    @classmethod
+    def all_types(cls):
+        prefix = cls.get_type_prefix()
+        return [(name, item) for name, item in cls.__members__.items() if name.startswith(prefix)]
+
+    @staticmethod
+    def get_type_prefix():
+        prefix = "type__"
+        return prefix
+
+    @classmethod
+    def all_properties(cls):
+        prefix = cls.get_type_prefix()
+        return [item for name, item in cls.__members__.items() if not name.startswith(prefix)]
+
+    @property
+    def type(self):
+        view_type = View.registered_view()[self.scope]
+        typs = view_type.all_types()
+        prefix = self.get_type_prefix()
+        for name, typ in typs:
+            if self in typ:
+                typ_name = name[len(prefix):]
+                try:
+                    return ViewType[typ_name]
+                except KeyError:
+                    raise ValueError("{self}'s type <{typ}> is not in the ViewType {members}".format(
+                        typ=typ_name,
+                        self=self,
+                        members=list(ViewType.__members__)
+                    ))
+        raise ValueError("No type registered to {}".format(self))
+
     @staticmethod
     def by_name(name):
         return View.registered_view()[
             ViewScope[name]
         ]
+
+
+def assertion(func):
+    def _check_assert(x):
+        try:
+            func(x)
+            return True
+        except AssertionError:
+            return False
+
+    return _check_assert
+
+
+class ViewType(Flag):
+    index = auto()
+    score = auto()
+    tiles = auto()
+    melds = auto()
+    str = auto()
+
+    int = index | score
+    list = tiles | melds
+
+
+class PropertyTypeManager:
+    def __init__(self):
+        self._checker = {}
+        self._default_value = {}
+
+    def get_default(self, view: View):
+        view_typ = view.type
+        for typ, default_ctor in self._default_value.items():
+            if view_typ in typ:
+                return default_ctor()
+
+    def assertion_check(self, name):
+        def _assertion_wrapper(func):
+            checker = assertion(func)
+            self._checker[name] = checker
+            return checker
+
+        return _assertion_wrapper
+
+    def register_default_ctor(self, name):
+        def _default_value_wrapper(func):
+            self._default_value[name] = func
+
+        return _default_value_wrapper
 
 
 class GameView(View, Flag):
@@ -47,6 +134,10 @@ class GameView(View, Flag):
     dora_indicators = auto()
     richii_remain_scores = auto()
     oya = auto()
+
+    type__index = wind | round | sub_round | oya
+    type__score = richii_remain_scores
+    type__tiles = dora_indicators
 
 
 class PlayerView(View, Flag):
@@ -58,6 +149,11 @@ class PlayerView(View, Flag):
     fixed_meld = auto()
     meld_public_tiles = auto()
     score = auto()
+
+    type__str = name | level | extra_level
+    type__score = score
+    type__tiles = hand | discard_tiles | meld_public_tiles
+    type__melds = fixed_meld
 
 
 # public_tiles =
@@ -99,7 +195,7 @@ class Update(Enum):
 
     def operand_num(self):
         return defaultdict(default_value_func(None), {
-            Update.AND: 2,
+            Update.ADD: 2,
             Update.REMOVE: 2,
             Update.RESET_DEFAULT: 0,
         })[self]
@@ -122,10 +218,7 @@ class GameProperty:
 
     @property
     def scope(self):
-        if isinstance(self.view_property, GameView):
-            return ViewScope.game
-        elif isinstance(self.view_property, PlayerView):
-            return ViewScope.player
+        return self.view_property.scope
 
 
 _Game_command = namedtuple(

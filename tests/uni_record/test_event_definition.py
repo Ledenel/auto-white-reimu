@@ -13,9 +13,15 @@ command_list = None
 
 def command_setup():
     global command_list
+    commands = get_test_commands()
+    command_list = commands
+
+
+def get_test_commands():
     with open(test_file, "r") as f:
         record = from_file(f)
-    command_list = to_commands(record)
+    commands = to_commands(record)
+    return commands
 
 
 command_setup()
