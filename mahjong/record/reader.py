@@ -76,6 +76,9 @@ class TenhouGame:
     def richii_counts(self):
         return self.seeds[2]
 
+    def initial_dora(self):
+        return self.seeds[-1]
+
     def end_stringify(self, event):
         if is_somebody_win_game(event):
             who, from_who = (int(event.attrib[s]) for s in ['who', 'fromWho'])

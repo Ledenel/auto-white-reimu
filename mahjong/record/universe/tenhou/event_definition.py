@@ -1,7 +1,8 @@
 from typing import List, Union
 
 from mahjong.record.reader import TenhouGame
-from mahjong.record.universe.format import GameCommand, GameProperty, PlayerView, Update
+from mahjong.record.universe.format import GameCommand, GameProperty, PlayerView, Update, GameView
+from mahjong.record.utils.builder import Builder
 from mahjong.record.utils.event import *
 from mahjong.record.universe.tenhou.xml_macher import tenhou_command
 
@@ -35,7 +36,8 @@ def draw_command(event: TenhouEvent):
     draw = draw_tile_tenhou(event)
     if draw:
         yield GameCommand(
-            GameProperty(PlayerView.hand, Update.ADD),
+            view_property=PlayerView.hand,
+            update_method=Update.ADD,
             sub_scope_id=draw['player'],
             value=tile_str_list([draw['tile']])
         )
@@ -44,18 +46,35 @@ def draw_command(event: TenhouEvent):
 @tenhou_command.match_names(DISCARD_INDICATOR)
 def discard_command(event: TenhouEvent):
     discard = discard_tile_tenhou(event)
+    cmd = Builder(GameCommand)
     if discard:
-        yield from GameCommand.multi_command([
-            GameProperty(PlayerView.hand, Update.REMOVE),
-            GameProperty(PlayerView.discard_tiles, Update.ADD)
-        ],
-            sub_scope_id=discard['player'],
-            value=tile_str_list([discard['tile']])
-        )
+        with cmd.when(
+                sub_scope_id=discard['player'],
+                value=tile_str_list(discard['tile']),
+        ):
+            yield cmd(view_property=PlayerView.hand, update=Update.REMOVE)
+            yield cmd(view_property=PlayerView.discard_tiles, update=Update.ADD)
+
 
 @tenhou_command.match_name("INIT")
 def game_init_command(event: TenhouEvent):
     game_context: TenhouGame = event.context_
+    cmd = Builder(GameCommand)
+    with cmd.when(update=Update.REPLACE):
+        prevailing, game_index = game_context.game_index()
+        yield cmd(view_property=GameView.wind, value=prevailing)
+        yield cmd(view_property=GameView.round, value=game_index)
+        yield cmd(view_property=GameView.sub_round, value=game_context.sub_game_index())
+        yield cmd(view_property=GameView.richii_remain_scores, value=game_context.richii_counts() * 1000)
+        yield cmd(view_property=GameView.oya, value=game_context.east_index)
+        yield cmd(view_property=GameView.dora_indicators, value=tile_str_list([game_context.initial_dora()]))
+        for player_id in range(game_context.game_type.player_count()):
+            score_all = number_list(event.attrib['ten'])
+            with cmd.when(sub_scope_id=player_id):
+                with cmd.when(update=Update.RESET_DEFAULT):
+                    yield cmd(view_property=PlayerView.discard_tiles)
+                    yield cmd(view_property=PlayerView.fixed_meld)
+                    yield cmd(view_property=PlayerView.meld_public_tiles)
+                yield cmd(view_property=PlayerView.hand, value=tile_str_list(event.attrib['hai{}'.format(player_id)]))
+                yield cmd(view_property=PlayerView.score, value=score_all[player_id] * 100)
 
-    raise NotImplemented
-    #TODO add prevailing and wind calculation.

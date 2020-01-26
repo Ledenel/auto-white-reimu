@@ -1,8 +1,7 @@
 import operator
 
-from typing import Iterable
-
 from mahjong.record.universe.format import *
+from mahjong.record.utils.builder import TransferDict
 
 
 def null():
@@ -10,7 +9,7 @@ def null():
 
 
 defaultExecutor = {
-    Update.FILL_DEFAULT: null,
+    Update.RESET_DEFAULT: null,
     Update.ADD: operator.add,
     Update.REMOVE: operator.sub,
 }
@@ -21,7 +20,7 @@ def fill_value_executor(value):
         return value
 
     return {
-        Update.FILL_DEFAULT: default_val,
+        Update.RESET_DEFAULT: default_val,
         Update.ADD: operator.add,
         Update.REMOVE: operator.sub,
     }
@@ -35,57 +34,16 @@ def remove_all(lst: list, values: list):
 
 
 listExecutor = {
-    Update.FILL_DEFAULT: list,
+    Update.RESET_DEFAULT: list,
     Update.ADD: operator.add,
     Update.REMOVE: remove_all,
 }
 
 setExecutor = {
-    Update.FILL_DEFAULT: set,
+    Update.RESET_DEFAULT: set,
     Update.ADD: operator.or_,
     Update.REMOVE: operator.sub,
 }
-
-
-class TransferDict:
-    def __init__(self, nested_dict, parent=None, parent_key=None):
-        self.parent: TransferDict = parent
-        self.parent_key = parent_key
-        self.nested_dict = {
-            k: TransferDict(v, self, k) if isinstance(v, dict) else v
-            for k, v in nested_dict.items()
-        }
-
-    def __getattr__(self, item):
-        return getattr(self.nested_dict, item)
-
-    def _readonly(self, *args, **kwards):
-        raise NotImplemented
-
-    __setattr__ = __setitem__ = __delattr__ = pop = update = popitem = _readonly
-
-    def set(self, key, value):
-        modified = TransferDict({
-            **self,
-            key: value
-        })
-        return self.parent.set(
-            self.parent_key, modified
-        ) if self.parent is not None else modified
-
-    def drop(self, key):
-        dict_cpy = self.nested_dict.copy()
-        del dict_cpy[key]
-        modified = TransferDict(dict_cpy)
-        return self.parent.set(
-            self.parent_key, modified
-        ) if self.parent is not None else modified
-
-    def setdefault(self, key, default):
-        if key not in self:
-            return self.set(key, default)
-        else:
-            return self
 
 
 # def setdefault(self, k, default):
@@ -95,6 +53,13 @@ class TransferDict:
 class CombinedCommandExecutor:
     def __init__(self, executor_with_type):
         self.executor_with_type = executor_with_type
+
+    def has_function(self, value, method: Update):
+        for typ, executor in self.executor_with_type:
+            if typ is None or isinstance(value, typ):
+                if method in executor:
+                    return True
+        return False
 
     def execute_value(self, command: GameCommand, origin_value=None):
         for typ, executor in self.executor_with_type:
@@ -164,8 +129,8 @@ class GameExecutor:
                     command, view[command.prop.view_property]
                 ),
             )
-        elif method == Update.FILL_DEFAULT:
-            curr_state = view.setdefault(
+        elif method == Update.RESET_DEFAULT:
+            curr_state = view.set(
                 command.prop.view_property,
                 self.executor.execute_value(
                     command

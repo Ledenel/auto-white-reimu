@@ -47,6 +47,7 @@ class GameView(View):
     sub_round = auto()
     dora_indicators = auto()
     richii_remain_scores = auto()
+    oya = auto()
 
 
 class PlayerView(View):
@@ -58,6 +59,7 @@ class PlayerView(View):
     fixed_meld = auto()
     meld_public_tiles = auto()
     score = auto()
+
 
 # public_tiles =
 # GameView.dora_indicators |
@@ -82,13 +84,13 @@ class Update(Enum):
     CLEAR = auto()
     ADD = auto()
     REMOVE = auto()
-    FILL_DEFAULT = auto()
+    RESET_DEFAULT = auto()
 
     def operand_num(self):
         return defaultdict(default_value_func(None), {
             Update.AND: 2,
             Update.REMOVE: 2,
-            Update.FILL_DEFAULT: 0,
+            Update.RESET_DEFAULT: 0,
         })[self]
 
 
@@ -129,23 +131,25 @@ _Game_command = namedtuple(
 
 
 class GameCommand:
-    def __init__(self, prop: GameProperty, sub_scope_id=None, value=None, timestamp=None):
+    def __init__(self, view_property: View, update_method: Update, sub_scope_id=None, value=None, timestamp=None):
         self.timestamp = timestamp
         # if value is None and prop.default_ctor is not None and prop.update_method != Update.CLEAR:
         #     self.value = prop.default_ctor()
         # else:
         self.sub_scope_id = sub_scope_id
         self.value = value
-        self.prop = prop
+        self.property = view_property
+        self.update_method = update_method
+        self.prop = GameProperty(self.property, self.update_method)
 
-    @staticmethod
-    def multi_command(props: Iterable[GameProperty], sub_scope_id=None, value=None, timestamp=None):
-        return [GameCommand(
-            prop,
-            sub_scope_id=sub_scope_id,
-            value=value,
-            timestamp=timestamp
-        ) for prop in props]
+    # @staticmethod
+    # def multi_command(props: Iterable[GameProperty], sub_scope_id=None, value=None, timestamp=None):
+    #     return [GameCommand(
+    #         prop,
+    #         sub_scope_id=sub_scope_id,
+    #         value=value,
+    #         timestamp=timestamp
+    #     ) for prop in props]
 
     def to_record(self):
         return _Game_command(
@@ -160,10 +164,8 @@ class GameCommand:
     @staticmethod
     def from_record(record: _Game_command):
         return GameCommand(
-            GameProperty(
-                View.by_name(record.scope)[record.property],
-                Update[record.update_method],
-            ),
+            View.by_name(record.scope)[record.property],
+            Update[record.update_method],
             sub_scope_id=record.sub_scope_id,
             value=record.value,
             timestamp=record.timestamp,
