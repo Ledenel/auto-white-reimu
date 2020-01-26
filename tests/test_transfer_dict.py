@@ -19,6 +19,7 @@ def test_set():
     assert trans_2['a']['1'] == 'x'
     assert trans_2['b']['2']['3'] == 'y'
 
+
 def test_set_same_dict():
     trans = TransferDict({
         'a': {
@@ -43,6 +44,7 @@ def test_set_same_dict():
     assert trans_3['b']['2']['3'] == 'y'
     assert trans_3['a']['2'] == 'p'
     assert trans_3['a']['3'] == 'c'
+
 
 def test_trans_differ():
     trans = TransferDict({

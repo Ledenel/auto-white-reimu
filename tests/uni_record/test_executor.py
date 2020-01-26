@@ -7,4 +7,4 @@ commands = get_test_commands()
 def test_execute():
     assert len(list(GameExecutor().execute(commands))) > 1
 
-
+# TODO: add export execute to csv (flatten for TransferDict).
