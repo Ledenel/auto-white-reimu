@@ -95,7 +95,7 @@ class ViewType(Flag):
     score = auto()
     tiles = auto()
     melds = auto()
-    str = auto()
+    str = auto()  # FIXME: str type is not suitable for ast.literal_eval, 'str' is needed (add more to property type manager)
 
     int = index | score
     list = tiles | melds
@@ -181,7 +181,7 @@ def norm_empty(x):
     return None if is_empty(x) else x
 
 
-def norm_value_str(x: str):
+def norm_value_str(x: str):  # FIXME: take caution about type with str
     return ast.literal_eval(x) if x != "" else None
 
 
