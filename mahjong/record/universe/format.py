@@ -1,7 +1,7 @@
-from abc import ABCMeta, abstractmethod
+import ast
 from collections import namedtuple, defaultdict
 from enum import Flag, auto, Enum, IntEnum
-from typing import Any, Callable, Iterable, TypeVar, List
+from typing import Callable, Iterable, TypeVar, List
 
 from loguru import logger
 
@@ -75,6 +75,18 @@ def default_value_func(value):
         return value
 
     return _default
+
+
+def is_empty(x):
+    return x is None or x != x
+
+
+def norm_empty(x):
+    return None if is_empty(x) else x
+
+
+def norm_value_str(x: str):
+    return ast.literal_eval(x) if x != "" else None
 
 
 # default_ctor: Callable[[], Any] = None[]='
@@ -171,10 +183,10 @@ class GameCommand:
         return GameCommand(
             prop=View.by_name(record.scope)[record.property],
             update=Update[record.update_method],
-            sub_scope=record.sub_scope_id,
-            value=record.value,
-            timestamp=record.timestamp,
-        ),
+            sub_scope=norm_empty(record.sub_scope_id),
+            value=norm_empty(record.value),
+            timestamp=norm_empty(record.timestamp),
+        )
 
 
 EventT = TypeVar('EventT')
