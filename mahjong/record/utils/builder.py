@@ -6,7 +6,7 @@ class TransferDict:
         self.parent: TransferDict = parent
         self.parent_key = parent_key
         self.nested_dict = {
-            k: TransferDict(v, self, k) if isinstance(v, dict) else v #FIXME: fix construction (also copy TransferDict)
+            k: self.transfer_value(k, v) #fix construction (also copy TransferDict)
             for k, v in nested_dict.items()
         }
 

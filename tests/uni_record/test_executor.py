@@ -5,4 +5,6 @@ commands = get_test_commands()
 
 
 def test_execute():
-    assert list(GameExecutor().execute(commands)) > 1
+    assert len(list(GameExecutor().execute(commands))) > 1
+
+
