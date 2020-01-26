@@ -150,6 +150,12 @@ class GameCommand:
     #         timestamp=timestamp
     #     ) for prop in props]
 
+    def __str__(self):
+        return str(self.to_record())
+
+    def __repr__(self):
+        return "{%s}" % str(self)
+
     def to_record(self):
         return _Game_command(
             timestamp=self.timestamp,

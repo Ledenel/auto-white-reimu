@@ -20,11 +20,11 @@ class TenhouCommandTranslator(CommandTranslator):
 
         return _matcher_decor
 
-    def match_names(self, names: str) -> Callable[[EventTransform], EventTransform]:
+    def match_names(self, names: List[str]) -> Callable[[EventTransform], EventTransform]:
         def _matcher_decor(func: EventTransform):
             for name in names:
                 self.name_match[name].append(func)
-                return func
+            return func
 
         return _matcher_decor
 
@@ -35,7 +35,7 @@ class TenhouCommandTranslator(CommandTranslator):
 
         return _matcher_decor
 
-    def match_both(self, *, name: str, attr=str) -> Callable[[EventTransform], EventTransform]:
+    def match_both(self, *, name: str, attr: str) -> Callable[[EventTransform], EventTransform]:
         def _matcher_decor(func: EventTransform):
             self.both_match[(attr, name)].append(func)
             return func

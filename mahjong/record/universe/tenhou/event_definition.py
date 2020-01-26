@@ -31,7 +31,7 @@ def discard_tile_tenhou(event):
     return tile_change_tenhou(event, DISCARD_GROUPED_REGEX, DISCARD_INDICATOR)
 
 
-@tenhou_command.match_names(DRAW_INDICATOR)
+@tenhou_command.default_event
 def draw_command(event: TenhouEvent):
     draw = draw_tile_tenhou(event)
     if draw:
@@ -43,14 +43,14 @@ def draw_command(event: TenhouEvent):
         )
 
 
-@tenhou_command.match_names(DISCARD_INDICATOR)
+@tenhou_command.default_event
 def discard_command(event: TenhouEvent):
     discard = discard_tile_tenhou(event)
     cmd = Builder(GameCommand)
     if discard:
         with cmd.when(
                 sub_scope=discard['player'],
-                value=tile_str_list(discard['tile']),
+                value=tile_str_list([discard['tile']]),
         ):
             yield cmd(prop=PlayerView.hand, update=Update.REMOVE)
             yield cmd(prop=PlayerView.discard_tiles, update=Update.ADD)
