@@ -44,8 +44,12 @@ def is_game_end(event):
 
 
 class TenhouGame:
-    def __init__(self, game_events, game_type: GameType, players: List[TenhouPlayer]):
+    def __init__(self, game_events, game_type: GameType, players: List[TenhouPlayer], *, context):
         self.players = players
+        self.context_ = context
+        game_events = list(game_events)
+        for event in game_events:
+            event.context_ = self
         init, *playing = game_events
         playing = list(playing)
         first_end_index = next(i for (i, x) in enumerate(playing) if is_game_end(x))
@@ -71,6 +75,9 @@ class TenhouGame:
 
     def richii_counts(self):
         return self.seeds[2]
+
+    def initial_dora(self):
+        return self.seeds[-1]
 
     def end_stringify(self, event):
         if is_somebody_win_game(event):
@@ -127,7 +134,7 @@ def list_of_xml_configs(xml_element_list):
 
 class TenhouRecord:
     def __init__(self, events):
-        events = [TenhouEvent(event) for event in events]
+        events = [TenhouEvent(event, context=self) for event in events]
         self.events = events
         head_events, *game_chunks = list(list(g) for _, g in StageGroupby(events, True, False, key=is_game_init))
         self._meta = list_of_xml_configs(head_events)
@@ -147,7 +154,7 @@ class TenhouRecord:
                 meta.UN.sx.split(',')
             )
         ]
-        self.game_list = [TenhouGame(item, self.game_type, self.players) for item in game_chunks]
+        self.game_list = [TenhouGame(item, self.game_type, self.players, context=self) for item in game_chunks]
         end_infos = number_list(end_event.attrib['owari'])
         steps = 2
         self.end_score, self.end_point = (end_infos[i::steps] for i in range(steps))

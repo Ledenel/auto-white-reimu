@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from enum import Enum, auto
 from typing import Set, Iterable
 
 from mahjong.container.set import TileSet
@@ -342,18 +343,25 @@ meld_type_unpacker = bit_struct_from_desc(meld_type_desc)
 MeldTypeData = named_tuple_from_desc("meld_type", meld_type_desc)
 
 
+class Meld(Enum):
+    flush = auto()
+    triplet = auto()
+    kan = auto()
+    add_kan = auto()
+    kita = auto()
+
 def meld_type(data):
     type_of = unpack_with(MeldTypeData, meld_type_unpacker, data)
     if type_of.syuntsu:
-        return "flush"
+        return Meld.flush
     elif type_of.koutsu:
-        return "triplet"
+        return Meld.triplet
     elif type_of.chakan:
-        return "add_kan"
+        return Meld.add_kan
     elif type_of.nuki:
-        return "kita"
+        return Meld.kita
     else:
-        return "kan"
+        return Meld.kan
 
 
 def meld_from(event) -> Meld:
