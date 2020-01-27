@@ -1,14 +1,25 @@
 from typing import List
 
-
 class TransferDict:
     def __init__(self, nested_dict, parent=None, parent_key=None):
         self.parent: TransferDict = parent
         self.parent_key = parent_key
         self.nested_dict = {
-            k: self.transfer_value(k, v) #fix construction (also copy TransferDict)
+            k: self.transfer_value(k, v)  # fix construction (also copy TransferDict)
             for k, v in nested_dict.items()
         }
+
+    def flatten_iter(self):
+        for k, v in self.nested_dict.items():
+            initial = [k]
+            if isinstance(v, TransferDict):
+                for sub_k, sub_v in v.flatten_iter():
+                    yield tuple(initial + list(sub_k)), sub_v
+            else:
+                yield tuple(initial), v
+
+    def flatten(self):
+        return dict(self.flatten_iter())
 
     def __getattr__(self, item):
         return getattr(self.nested_dict, item)
