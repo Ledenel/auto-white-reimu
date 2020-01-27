@@ -20,7 +20,7 @@ def assertion(func):
 
 def lookup_enum_table(call_table, view_typ, *args):
     for typ, func in call_table.items():
-        if view_typ in typ:
+        if typ is None or view_typ in typ:
             return func(*args)
     raise ValueError("no '{}' found in table {}.".format(view_typ, call_table))
 
@@ -29,8 +29,8 @@ class PropertyTypeManager:
     def __init__(self):
         self._checker = {}
         self._default_value_ctor = {}
-        self._value_to_str = {}
-        self._str_to_value = {}
+        self._value_to_str = {None: repr}
+        self._str_to_value = {None: ast.literal_eval}
 
     def register_to_str(self, name):
         def _to_str_wrapper(func):
