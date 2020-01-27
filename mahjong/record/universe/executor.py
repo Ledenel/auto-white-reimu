@@ -3,7 +3,7 @@ import operator
 from typing import Iterable
 
 from mahjong.record.universe.command import GameCommand
-from mahjong.record.universe.common import prop_manager
+from mahjong.record.universe.property_manager import prop_manager
 from mahjong.record.universe.format import *
 from mahjong.record.utils.builder import TransferDict
 

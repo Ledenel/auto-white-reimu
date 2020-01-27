@@ -53,7 +53,7 @@ def test_command_serialize():
     df.to_csv("command_test.csv")
     df_new = pandas.read_csv(
         "command_test.csv",
-        converters={'value': norm_value_str},
+        # converters={'value': norm_value_str},
     )
     reconstructed_list = [GameCommand.from_record(x) for x in df_new.itertuples(index=False)]
     for a, b in zip(command_list, reconstructed_list):
