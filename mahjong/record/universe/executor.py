@@ -2,21 +2,14 @@ import operator
 
 from typing import Iterable
 
-from mahjong.record.universe.command import PropertyTypeManager, GameCommand
+from mahjong.record.universe.command import GameCommand
+from mahjong.record.universe.common import prop_manager
 from mahjong.record.universe.format import *
 from mahjong.record.utils.builder import TransferDict
 
 
 def null():
     return None
-
-
-prop_manager = PropertyTypeManager()
-
-
-@prop_manager.register_default_ctor(ViewType.list)
-def empty_list():
-    return []
 
 
 defaultExecutor = {
@@ -26,10 +19,7 @@ defaultExecutor = {
 }
 
 
-def fill_value_executor(value):
-    def default_val():
-        return value
-
+def fill_value_executor():
     return {
         Update.ADD: operator.add,
         Update.REMOVE: operator.sub,
