@@ -18,18 +18,44 @@ def assertion(func):
     return _check_assert
 
 
+def lookup_enum_table(call_table, view_typ, *args):
+    for typ, func in call_table.items():
+        if view_typ in typ:
+            return func(*args)
+    raise ValueError("no '{}' found in table {}.".format(view_typ, call_table))
+
+
 class PropertyTypeManager:
     def __init__(self):
         self._checker = {}
-        self._default_value = {}
+        self._default_value_ctor = {}
+        self._value_to_str = {}
+        self._str_to_value = {}
+
+    def register_to_str(self, name):
+        def _to_str_wrapper(func):
+            self._value_to_str[name] = func
+            return func
+
+        return _to_str_wrapper
+
+    def to_str(self, view: View, value):
+        return lookup_enum_table(self._value_to_str, view.type, value)
+
+    def register_from_str(self, name):
+        def _from_str_wrapper(func):
+            self._str_to_value[name] = func
+            return func
+
+        return _from_str_wrapper
+
+    def from_str(self, view: View, str_value):
+        return lookup_enum_table(self._str_to_value, view.type, str_value)
 
     def get_default(self, view: View):
-        view_typ = view.type
-        for typ, default_ctor in self._default_value.items():
-            if view_typ in typ:
-                return default_ctor()
+        return lookup_enum_table(self._default_value_ctor, view.type)
 
-    def assertion_check(self, name):
+    def register_assertion_check(self, name):
         def _assertion_wrapper(func):
             checker = assertion(func)
             self._checker[name] = checker
@@ -39,7 +65,8 @@ class PropertyTypeManager:
 
     def register_default_ctor(self, name):
         def _default_value_wrapper(func):
-            self._default_value[name] = func
+            self._default_value_ctor[name] = func
+            return func
 
         return _default_value_wrapper
 
@@ -67,7 +94,6 @@ class GameProperty:
         return self.view_property.scope
 
 
-
 _Game_command = namedtuple(
     "GameCommand_",
     field_names=[
@@ -79,6 +105,8 @@ _Game_command = namedtuple(
         "value",
     ]
 )
+
+
 class GameCommand:
     def __init__(self, *, prop: View, update: Update, sub_scope=None, value=None, timestamp=None):
         self.timestamp = timestamp
@@ -130,6 +158,7 @@ class GameCommand:
 EventT = TypeVar('EventT')
 EventTransform = Callable[[EventT], Iterable[GameCommand]]
 
+
 class CommandTranslator:
     def __init__(self):
         self.defaults = []
@@ -161,4 +190,3 @@ class CommandTranslator:
         else:
             logger.warning("event <{}> is not transformed to game commands.", event)
             return []
-
