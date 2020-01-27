@@ -1,5 +1,8 @@
 import operator
 
+from typing import Iterable
+
+from mahjong.record.universe.command import PropertyTypeManager, GameCommand
 from mahjong.record.universe.format import *
 from mahjong.record.utils.builder import TransferDict
 

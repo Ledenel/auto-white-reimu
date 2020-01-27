@@ -3,7 +3,8 @@ import ast
 import pandas
 
 from mahjong.record.reader import from_file
-from mahjong.record.universe.format import GameCommand, PlayerView, Update, norm_value_str
+from mahjong.record.universe.format import PlayerView, Update
+from mahjong.record.universe.command import norm_value_str, GameCommand
 from mahjong.record.universe.tenhou import to_commands
 
 test_file = "tests/2009060321gm-00b9-0000-75b25bcf.xml"

@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from typing import List, Callable
 
-from mahjong.record.universe.format import GameCommand, EventTransform, CommandTranslator
+from mahjong.record.universe.command import GameCommand, CommandTranslator, EventTransform
 from mahjong.record.utils.event import TenhouEvent
 
 
