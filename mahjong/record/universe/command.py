@@ -2,6 +2,7 @@ import ast
 from collections import namedtuple
 from typing import List, TypeVar, Callable, Iterable
 
+import numpy
 from loguru import logger
 
 from mahjong.record.universe.property_manager import prop_manager
@@ -31,16 +32,17 @@ class GameProperty:
         return self.view_property.scope
 
 
+command_field_names = [
+    "timestamp",
+    "scope",
+    "sub_scope_id",
+    "property",
+    "update_method",
+    "value",
+]
 _Game_command = namedtuple(
     "GameCommand_",
-    field_names=[
-        "timestamp",
-        "scope",
-        "sub_scope_id",
-        "property",
-        "update_method",
-        "value",
-    ]
+    field_names=command_field_names
 )
 
 
@@ -70,6 +72,26 @@ class GameCommand:
 
     def __repr__(self):
         return "{%s}" % str(self)
+
+    @staticmethod
+    def pandas_column_clean(row):
+        record = _Game_command(*row)
+        command = GameCommand.from_record(record)
+        return numpy.fromiter(command.to_raw_record(), dtype=numpy.object)
+
+    def to_raw_record(self):
+        return _Game_command(
+            timestamp=self.timestamp,
+            scope=self.prop.scope,
+            sub_scope_id=self.sub_scope_id,
+            property=self.prop.view_property,
+            update_method=self.prop.update_method,
+            value=self.value,
+        )
+
+    @staticmethod
+    def from_raw_record(record: _Game_command):
+        return GameCommand(**record._asdict())
 
     def to_record(self):
         return _Game_command(
