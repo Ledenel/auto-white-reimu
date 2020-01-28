@@ -55,6 +55,6 @@ def test_command_serialize():
         "command_test.csv",
         # converters={'value': norm_value_str},
     )
-    reconstructed_list = [GameCommand.from_record(x) for x in df_new.itertuples(index=False)]
+    reconstructed_list = [GameCommand.from_record(x) for x in df_new.itertuples()]
     for a, b in zip(command_list, reconstructed_list):
         assert a.to_record() == b.to_record()
