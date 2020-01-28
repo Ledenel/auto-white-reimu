@@ -1,4 +1,4 @@
-from mahjong.record.utils.builder import TransferDict
+from mahjong.record.universe.executor import TransferDict
 
 
 def test_set():
