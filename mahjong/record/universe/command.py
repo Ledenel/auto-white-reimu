@@ -45,6 +45,8 @@ _Game_command = namedtuple(
     field_names=command_field_names
 )
 
+command_field_names_set = set(command_field_names)
+
 
 class GameCommand:
     def __init__(self, *, prop: View, update: Update, sub_scope=None, value=None, timestamp=None):
@@ -74,10 +76,16 @@ class GameCommand:
         return "{%s}" % str(self)
 
     @staticmethod
-    def pandas_column_clean(row):
-        record = _Game_command(*row)
+    def pandas_columns_clean(row):
+        # remove index
+        row = row[command_field_names]
+        series_ctor = type(row)
+        record = _Game_command(**row)
         command = GameCommand.from_record(record)
-        return numpy.fromiter(command.to_raw_record(), dtype=numpy.object)
+        target = numpy.array(command.to_raw_record(), dtype=object)
+        target_series = series_ctor(target)
+        target_series.index = command_field_names
+        return target_series
 
     def to_raw_record(self):
         return _Game_command(
@@ -91,7 +99,13 @@ class GameCommand:
 
     @staticmethod
     def from_raw_record(record: _Game_command):
-        return GameCommand(**record._asdict())
+        return GameCommand(
+            prop=record.property,
+            update=record.update_method,
+            sub_scope=norm_empty(record.sub_scope_id),
+            value=norm_empty(record.value),
+            timestamp=norm_empty(record.timestamp),
+        )
 
     def to_record(self):
         return _Game_command(
