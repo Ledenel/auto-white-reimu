@@ -11,12 +11,20 @@ import mahjong.record.universe.format as mahjong_format
 def get_enums_from(module):
     for name in dir(module):
         typ = getattr(module, name)
-        if issubclass(typ, Enum):
+        if isinstance(typ, type) and issubclass(typ, Enum):
             yield name, typ
 
 
 enums = dict(get_enums_from(mahjong_format))
 
+
+def replace_enum_values(value_str):
+    if isinstance(value_str, str):
+        split = value_str.split(".")
+        if len(split) == 2:
+            typ, name = split
+            return enums[typ][name]
+    return value_str
 
 def null():
     return None
