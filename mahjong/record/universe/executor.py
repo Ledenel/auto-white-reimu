@@ -2,21 +2,34 @@ import operator
 
 from typing import Iterable
 
-from mahjong.record.universe.command import PropertyTypeManager, GameCommand
+from mahjong.record.universe.command import GameCommand
+from mahjong.record.universe.property_manager import prop_manager
 from mahjong.record.universe.format import *
-from mahjong.record.utils.builder import TransferDict
+import mahjong.record.universe.format as mahjong_format
+import pandas as pd
+
+
+def get_enums_from(module):
+    for name in dir(module):
+        typ = getattr(module, name)
+        if isinstance(typ, type) and issubclass(typ, Enum):
+            yield name, typ
+
+
+enums = dict(get_enums_from(mahjong_format))
+
+
+def replace_enum_values(value_str):
+    if isinstance(value_str, str):
+        split = value_str.split(".")
+        if len(split) == 2:
+            typ, name = split
+            return enums[typ][name]
+    return value_str
 
 
 def null():
     return None
-
-
-prop_manager = PropertyTypeManager()
-
-
-@prop_manager.register_default_ctor(ViewType.list)
-def empty_list():
-    return []
 
 
 defaultExecutor = {
@@ -26,10 +39,7 @@ defaultExecutor = {
 }
 
 
-def fill_value_executor(value):
-    def default_val():
-        return value
-
+def fill_value_executor():
     return {
         Update.ADD: operator.add,
         Update.REMOVE: operator.sub,
@@ -81,7 +91,24 @@ class CombinedCommandExecutor:
                     raise ValueError("Zero operand is not supported. Type of None value may be ambiguous.")
 
 
+def state_series_apply(x):
+    col_last = x.name[-1]
+    if hasattr(col_last, "type"):
+        def from_str_view(t):
+            return prop_manager.from_str(t, col_last)
+
+        return x.apply(from_str_view)
+    return x
+
+
 class GameExecutor:
+    @staticmethod
+    def read_clean_csv(csv_path):
+        df_states = pd.read_csv(csv_path, header=[0, 1, 2], skipinitialspace=True)
+        df_states = df_states.rename(columns=replace_enum_values)
+        df_states = df_states.apply(state_series_apply, axis="rows")
+        return df_states
+
     def __init__(self):
         self.executor = CombinedCommandExecutor([
             (list, listExecutor),
@@ -96,8 +123,8 @@ class GameExecutor:
             } for enum, multi_value in ViewScope.scopes_with_multi_value().items()
         }
         all_dict = {
-            "time": {
-                "global": {
+            "global": {
+                "time": {
 
                 },
             },
@@ -118,7 +145,12 @@ class GameExecutor:
         curr_state = self.states
         for command in commands:
             curr_state = self.execute_update_state(command, curr_state)
-            yield curr_state["time"]["global"].set("timestamp", command.timestamp)
+            yield curr_state["global"]["time"].set("timestamp", command.timestamp)
+
+    def execute_as_dataframe(self, commands: Iterable[GameCommand]):
+        df = pd.DataFrame(x.flatten() for x in self.execute(commands))
+        df.columns = pd.MultiIndex.from_tuples(df.columns)
+        return df
 
     def execute_update_state(self, command, curr_state):
         method = command.prop.update_method
@@ -146,3 +178,84 @@ class GameExecutor:
         else:
             raise ValueError("unrecognized", method)
         return result_state
+
+
+class TransferDict:
+    def __init__(self, nested_dict, parent=None, parent_key=None):
+        self.parent: TransferDict = parent
+        self.parent_key = parent_key
+        self.nested_dict = {
+            k: self.transfer_value(k, v)  # fix construction (also copy TransferDict)
+            for k, v in nested_dict.items()
+        }
+
+    def flatten_iter(self):
+        for k, v in self.nested_dict.items():
+            initial = [k]
+            if isinstance(v, TransferDict):
+                for sub_k, sub_v in v.flatten_iter():
+                    yield tuple(initial + list(sub_k)), sub_v
+            else:
+                yield tuple(initial), v
+
+    def flatten(self):
+        return dict((k, prop_manager.to_str(v, k[-1])) for k, v in self.flatten_iter())
+
+    def __getattr__(self, item):
+        return getattr(self.nested_dict, item)
+
+    def __getitem__(self, item):
+        return self.nested_dict[item]
+
+    def __str__(self):
+        return str(self.nested_dict)
+
+    def __repr__(self):
+        return repr(self.nested_dict)
+
+    def _readonly(self, *args, **kwards):
+        raise NotImplemented
+
+    __setitem__ = __delattr__ = pop = update = popitem = _readonly
+
+    def set(self, key, value):
+        modified_dict = {
+            **self.nested_dict,
+            key: value
+        }
+        modified = TransferDict(modified_dict, parent=self.parent, parent_key=self.parent_key)
+        if self.parent is not None:
+            return self.parent.set(
+                self.parent_key, modified
+            )
+        else:
+            # modified._update_link()
+            return modified
+
+    # def _update_link(self):
+    #     for k,v in self.nested_dict.items():
+    #         if isinstance(v, TransferDict):
+    #             v.parent = self
+    #             v.parent_key =
+
+    def drop(self, key):
+        dict_cpy = self.nested_dict.copy()
+        del dict_cpy[key]
+        modified = TransferDict(dict_cpy)
+        return self.parent.set(
+            self.parent_key, modified
+        ) if self.parent is not None else modified
+
+    def setdefault(self, key, default):
+        if key not in self:
+            return self.set(key, default)
+        else:
+            return self
+
+    def transfer_value(self, k, v):
+        if isinstance(v, dict):
+            return TransferDict(v, self, k)
+        elif isinstance(v, TransferDict):
+            return TransferDict(v.nested_dict, self, k)
+        else:
+            return v

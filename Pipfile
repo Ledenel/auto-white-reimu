@@ -18,6 +18,7 @@ bitstruct = "*"
 requests = "*"
 jinja2 = "*"
 loguru = "*"
+pandas = "*"
 
 [requires]
 python_version = "3.8"

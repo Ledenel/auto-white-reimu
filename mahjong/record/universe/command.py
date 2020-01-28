@@ -2,46 +2,12 @@ import ast
 from collections import namedtuple
 from typing import List, TypeVar, Callable, Iterable
 
+import numpy
+import pandas
 from loguru import logger
 
+from mahjong.record.universe.property_manager import prop_manager
 from mahjong.record.universe.format import View, Update
-
-
-def assertion(func):
-    def _check_assert(x):
-        try:
-            func(x)
-            return True
-        except AssertionError:
-            return False
-
-    return _check_assert
-
-
-class PropertyTypeManager:
-    def __init__(self):
-        self._checker = {}
-        self._default_value = {}
-
-    def get_default(self, view: View):
-        view_typ = view.type
-        for typ, default_ctor in self._default_value.items():
-            if view_typ in typ:
-                return default_ctor()
-
-    def assertion_check(self, name):
-        def _assertion_wrapper(func):
-            checker = assertion(func)
-            self._checker[name] = checker
-            return checker
-
-        return _assertion_wrapper
-
-    def register_default_ctor(self, name):
-        def _default_value_wrapper(func):
-            self._default_value[name] = func
-
-        return _default_value_wrapper
 
 
 def is_empty(x):
@@ -67,18 +33,22 @@ class GameProperty:
         return self.view_property.scope
 
 
-
+command_field_names = [
+    "timestamp",
+    "scope",
+    "sub_scope_id",
+    "property",
+    "update_method",
+    "value",
+]
 _Game_command = namedtuple(
     "GameCommand_",
-    field_names=[
-        "timestamp",
-        "scope",
-        "sub_scope_id",
-        "property",
-        "update_method",
-        "value",
-    ]
+    field_names=command_field_names
 )
+
+command_field_names_set = set(command_field_names)
+
+
 class GameCommand:
     def __init__(self, *, prop: View, update: Update, sub_scope=None, value=None, timestamp=None):
         self.timestamp = timestamp
@@ -106,6 +76,53 @@ class GameCommand:
     def __repr__(self):
         return "{%s}" % str(self)
 
+    @staticmethod
+    def clean(pandas_dataframe):
+        return pandas_dataframe.apply(GameCommand.pandas_columns_clean, axis="columns")
+
+
+    @staticmethod
+    def to_dataframe(command_list):
+        return pandas.DataFrame(
+            (x.to_record() for x in command_list),
+        )
+
+    @staticmethod
+    def read_clean_csv(csv_path):
+        return GameCommand.clean(pandas.read_csv(csv_path))
+
+    @staticmethod
+    def pandas_columns_clean(row):
+        # remove index
+        row = row[command_field_names]
+        series_ctor = type(row)
+        record = _Game_command(**row)
+        command = GameCommand.from_record(record)
+        target = numpy.array(command.to_raw_record(), dtype=object)
+        target_series = series_ctor(target)
+        target_series.index = command_field_names
+        return target_series
+
+    def to_raw_record(self):
+        return _Game_command(
+            timestamp=self.timestamp,
+            scope=self.prop.scope,
+            sub_scope_id=self.sub_scope_id,
+            property=self.prop.view_property,
+            update_method=self.prop.update_method,
+            value=self.value,
+        )
+
+    @staticmethod
+    def from_raw_record(record: _Game_command):
+        return GameCommand(
+            prop=record.property,
+            update=record.update_method,
+            sub_scope=norm_empty(record.sub_scope_id),
+            value=norm_empty(record.value),
+            timestamp=norm_empty(record.timestamp),
+        )
+
     def to_record(self):
         return _Game_command(
             timestamp=self.timestamp,
@@ -113,22 +130,24 @@ class GameCommand:
             sub_scope_id=self.sub_scope_id,
             property=self.prop.view_property.name,
             update_method=self.prop.update_method.name,
-            value=self.value,
+            value=prop_manager.to_str(self.value, self.prop.view_property),
         )
 
     @staticmethod
     def from_record(record: _Game_command):
+        view = View.by_name(record.scope)[record.property]
         return GameCommand(
-            prop=View.by_name(record.scope)[record.property],
+            prop=view,
             update=Update[record.update_method],
             sub_scope=norm_empty(record.sub_scope_id),
-            value=norm_empty(record.value),
+            value=prop_manager.from_str(record.value, view=view),
             timestamp=norm_empty(record.timestamp),
         )
 
 
 EventT = TypeVar('EventT')
 EventTransform = Callable[[EventT], Iterable[GameCommand]]
+
 
 class CommandTranslator:
     def __init__(self):
@@ -161,4 +180,3 @@ class CommandTranslator:
         else:
             logger.warning("event <{}> is not transformed to game commands.", event)
             return []
-
