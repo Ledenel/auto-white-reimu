@@ -96,6 +96,7 @@ def state_series_apply(x):
     if hasattr(col_last, "type"):
         def from_str_view(t):
             return prop_manager.from_str(t, col_last)
+
         return x.apply(from_str_view)
     return x
 
@@ -145,6 +146,11 @@ class GameExecutor:
         for command in commands:
             curr_state = self.execute_update_state(command, curr_state)
             yield curr_state["global"]["time"].set("timestamp", command.timestamp)
+
+    def execute_as_dataframe(self, commands: Iterable[GameCommand]):
+        df = pd.DataFrame(x.flatten() for x in self.execute(commands))
+        df.columns = pd.MultiIndex.from_tuples(df.columns)
+        return df
 
     def execute_update_state(self, command, curr_state):
         method = command.prop.update_method

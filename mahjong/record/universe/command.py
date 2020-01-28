@@ -3,6 +3,7 @@ from collections import namedtuple
 from typing import List, TypeVar, Callable, Iterable
 
 import numpy
+import pandas
 from loguru import logger
 
 from mahjong.record.universe.property_manager import prop_manager
@@ -78,6 +79,17 @@ class GameCommand:
     @staticmethod
     def clean(pandas_dataframe):
         return pandas_dataframe.apply(GameCommand.pandas_columns_clean, axis="columns")
+
+
+    @staticmethod
+    def to_dataframe(command_list):
+        return pandas.DataFrame(
+            (x.to_record() for x in command_list),
+        )
+
+    @staticmethod
+    def read_clean_csv(csv_path):
+        return GameCommand.clean(pandas.read_csv(csv_path))
 
     @staticmethod
     def pandas_columns_clean(row):
