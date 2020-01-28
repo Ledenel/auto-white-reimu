@@ -6,6 +6,7 @@ from mahjong.record.universe.command import GameCommand
 from mahjong.record.universe.property_manager import prop_manager
 from mahjong.record.universe.format import *
 import mahjong.record.universe.format as mahjong_format
+import pandas as pd
 
 
 def get_enums_from(module):
@@ -25,6 +26,7 @@ def replace_enum_values(value_str):
             typ, name = split
             return enums[typ][name]
     return value_str
+
 
 def null():
     return None
@@ -89,7 +91,23 @@ class CombinedCommandExecutor:
                     raise ValueError("Zero operand is not supported. Type of None value may be ambiguous.")
 
 
+def state_series_apply(x):
+    col_last = x.name[-1]
+    if hasattr(col_last, "type"):
+        def from_str_view(t):
+            return prop_manager.from_str(t, col_last)
+        return x.apply(from_str_view)
+    return x
+
+
 class GameExecutor:
+    @staticmethod
+    def read_clean_csv(csv_path):
+        df_states = pd.read_csv(csv_path, header=[0, 1, 2], skipinitialspace=True)
+        df_states = df_states.rename(columns=replace_enum_values)
+        df_states = df_states.apply(state_series_apply, axis="rows")
+        return df_states
+
     def __init__(self):
         self.executor = CombinedCommandExecutor([
             (list, listExecutor),

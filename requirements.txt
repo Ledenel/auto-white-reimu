@@ -14,4 +14,5 @@ bitstruct
 jinja2
 loguru
 numpy
+pandas
 requests
