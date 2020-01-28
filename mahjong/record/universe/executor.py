@@ -5,6 +5,17 @@ from typing import Iterable
 from mahjong.record.universe.command import GameCommand
 from mahjong.record.universe.property_manager import prop_manager
 from mahjong.record.universe.format import *
+import mahjong.record.universe.format as mahjong_format
+
+
+def get_enums_from(module):
+    for name in dir(module):
+        typ = getattr(module, name)
+        if issubclass(typ, Enum):
+            yield name, typ
+
+
+enums = dict(get_enums_from(mahjong_format))
 
 
 def null():

@@ -76,6 +76,10 @@ class GameCommand:
         return "{%s}" % str(self)
 
     @staticmethod
+    def clean(pandas_dataframe):
+        return pandas_dataframe.apply(GameCommand.pandas_columns_clean, axis="columns")
+
+    @staticmethod
     def pandas_columns_clean(row):
         # remove index
         row = row[command_field_names]
