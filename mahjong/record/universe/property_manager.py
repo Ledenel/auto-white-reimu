@@ -1,14 +1,21 @@
 import ast
+import json
 
 from mahjong.record.universe.format import ViewType, View
+
+
+def json_load_any(x):
+    if x != x:
+        return None
+    return json.loads(str(x))
 
 
 class PropertyTypeManager:
     def __init__(self):
         self._checker = {}
         self._default_value_ctor = {}
-        self._value_to_str = {None: repr}
-        self._str_to_value = {None: ast.literal_eval}
+        self._value_to_str = {None: json.dumps}
+        self._str_to_value = {None: json_load_any}
 
     def register_to_str(self, name):
         def _to_str_wrapper(func):
