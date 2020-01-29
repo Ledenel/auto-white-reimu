@@ -33,8 +33,6 @@ class GameProperty:
         return self.view_property.scope
 
 
-<<<<<<< HEAD
-=======
 command_field_names = [
     "timestamp",
     "scope",
@@ -43,17 +41,14 @@ command_field_names = [
     "update_method",
     "value",
 ]
->>>>>>> 3abcff629807ee5eb9d5de9d318cc879c5a12c9a
+
 _Game_command = namedtuple(
     "GameCommand_",
     field_names=command_field_names
 )
 
-<<<<<<< HEAD
-=======
 command_field_names_set = set(command_field_names)
 
->>>>>>> 3abcff629807ee5eb9d5de9d318cc879c5a12c9a
 
 class GameCommand:
     def __init__(self, *, prop: View, update: Update, sub_scope=None, value=None, timestamp=None):
