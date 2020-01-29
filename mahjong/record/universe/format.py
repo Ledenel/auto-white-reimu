@@ -108,10 +108,11 @@ class PlayerView(View, Flag):
     fixed_meld = auto()
     meld_public_tiles = auto()
     score = auto()
+    bonus_tiles = auto()
 
     type__str = name | level | extra_level
     type__score = score
-    type__tiles = hand | discard_tiles | meld_public_tiles
+    type__tiles = hand | discard_tiles | meld_public_tiles | bonus_tiles
     type__melds = fixed_meld
 
 
