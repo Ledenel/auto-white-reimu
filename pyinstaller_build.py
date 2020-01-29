@@ -9,6 +9,7 @@ resources = [
 targets = [
     os.path.join("mahjong", "tenhou_record_check.py"),
     os.path.join("mahjong", "win_rate_demo.py"),
+    os.path.join("mahjong", "universe_paifu_convert.py"),
 ]
 
 resources_all = ' '.join(

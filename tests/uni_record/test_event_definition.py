@@ -53,8 +53,22 @@ def test_command_serialize():
     df.to_csv("command_test.csv")
     df_new = pandas.read_csv(
         "command_test.csv",
-        converters={'value': norm_value_str},
+        # converters={'value': norm_value_str},
     )
-    reconstructed_list = [GameCommand.from_record(x) for x in df_new.itertuples(index=False)]
+    reconstructed_list = [GameCommand.from_record(x) for x in df_new.itertuples()]
+    for a, b in zip(command_list, reconstructed_list):
+        assert a.to_record() == b.to_record()
+
+def test_command_clean():
+    df = pandas.DataFrame(
+        (x.to_record() for x in command_list),
+    )
+    df.to_csv("command_test.csv")
+    df_new = pandas.read_csv(
+        "command_test.csv",
+        # converters={'value': norm_value_str},
+    )
+    df_clean = df_new.apply(GameCommand.pandas_columns_clean, axis="columns")
+    reconstructed_list = [GameCommand.from_raw_record(x) for x in df_clean.itertuples()]
     for a, b in zip(command_list, reconstructed_list):
         assert a.to_record() == b.to_record()
