@@ -343,7 +343,7 @@ meld_type_unpacker = bit_struct_from_desc(meld_type_desc)
 MeldTypeData = named_tuple_from_desc("meld_type", meld_type_desc)
 
 
-class Meld(Enum):
+class MeldType(Enum):
     flush = auto()
     triplet = auto()
     kan = auto()
@@ -353,15 +353,15 @@ class Meld(Enum):
 def meld_type(data):
     type_of = unpack_with(MeldTypeData, meld_type_unpacker, data)
     if type_of.syuntsu:
-        return Meld.flush
+        return MeldType.flush
     elif type_of.koutsu:
-        return Meld.triplet
+        return MeldType.triplet
     elif type_of.chakan:
-        return Meld.add_kan
+        return MeldType.add_kan
     elif type_of.nuki:
-        return Meld.kita
+        return MeldType.kita
     else:
-        return Meld.kan
+        return MeldType.kan
 
 
 def meld_from(event) -> Meld:
