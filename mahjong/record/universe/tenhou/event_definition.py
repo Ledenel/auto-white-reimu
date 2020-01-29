@@ -1,5 +1,7 @@
 from typing import Union, Iterable
 
+from loguru import logger
+
 from mahjong.record.player import TenhouPlayer
 from mahjong.record.reader import TenhouGame
 from mahjong.record.universe.command import GameCommand
@@ -62,6 +64,7 @@ def discard_command(event: TenhouEvent):
 
 @tenhou_command.match_name("INIT")
 def game_init_command(event: TenhouEvent):
+    _not_fully_support(event)
     game_context: TenhouGame = event.context_
     cmd = Builder(GameCommand)
     with cmd.when(update=Update.REPLACE):
@@ -80,8 +83,13 @@ def game_init_command(event: TenhouEvent):
                     yield cmd(prop=PlayerView.fixed_meld)
                     yield cmd(prop=PlayerView.meld_public_tiles)
                     yield cmd(prop=PlayerView.bonus_tiles)
+                yield cmd(prop=PlayerView.in_richii, value=False)
                 yield cmd(prop=PlayerView.hand, value=tile_str_list(event.attrib['hai{}'.format(player_id)]))
                 yield cmd(prop=PlayerView.score, value=score_all[player_id] * 100)
+
+
+def _not_fully_support(event):
+    logger.warning("event {} not fully parsed.", event)
 
 
 @tenhou_command.match_name("N")
@@ -143,6 +151,7 @@ def set_player_command(event: TenhouEvent):
                 yield cmd(prop=PlayerView.level, value=player.level_str())
                 yield cmd(prop=PlayerView.extra_level, value=player.rate)
 
+
 @tenhou_command.match_name("DORA")
 def dora_command(event: TenhouEvent):
     yield GameCommand(
@@ -151,3 +160,36 @@ def dora_command(event: TenhouEvent):
         value=tile_str_list(event.attrib["hai"])
     )
 
+
+@tenhou_command.match_name("REACH")
+def richii_command(event: TenhouEvent):
+    player_id = int(event.attrib["who"])
+    cmd = Builder(GameCommand)
+    with cmd.when(sub_scope=player_id):
+        if event.attrib["step"] == "1":
+            yield cmd(update=Update.REPLACE, prop=PlayerView.in_richii, value=True)
+        elif event.attrib["step"] == "2":
+            yield cmd(update=Update.REMOVE, prop=PlayerView.score, value=1000)
+
+
+@tenhou_command.match_name("AGARI")
+def agari_command(event: TenhouEvent):
+    game: TenhouGame = event.context_
+    _not_fully_support(event)
+    player_id = int(event.attrib["who"])
+    from_player_id = int(event.attrib["fromWho"])
+    sc_list = number_list(event.attrib["sc"])
+    sc_origin_list = sc_list[::2]
+    sc_delta_list = sc_list[1::2]
+    cmd = Builder(GameCommand)
+    with cmd.when(update=Update.ADD):
+        for p_id in range(len(game.players)):
+            yield cmd(prop=PlayerView.score, value=sc_delta_list[p_id], sub_scope=p_id)
+
+@tenhou_command.match_name("SHUFFLE")
+def shuffle_command(event: TenhouEvent):
+    yield GameCommand(
+        prop=RecordView.seed,
+        value=event.attrib["seed"],
+        update=Update.REPLACE,
+    )

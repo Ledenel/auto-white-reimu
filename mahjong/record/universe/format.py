@@ -83,7 +83,8 @@ class ViewType(Flag):
     score = auto()
     tiles = auto()
     melds = auto()
-    str = auto()  # FIXME: str type is not suitable for ast.literal_eval, 'str' is needed (add more to property type manager)
+    str = auto()
+    bool = auto()
 
     int = index | score
     list = tiles | melds
@@ -97,9 +98,11 @@ class RecordView(View, Flag):
     allow_tanyao_open = auto()
     play_wind_count = auto()
     show_discard_shadow = auto()
+    seed = auto()
 
-    type__index = player_count | has_aka_dora | speed_up | allow_tanyao_open | play_wind_count | show_discard_shadow
-    type__str = play_level
+    type__index = player_count | play_wind_count
+    type__str = play_level | seed
+    type__bool = has_aka_dora | speed_up | allow_tanyao_open | show_discard_shadow
 
 
 class GameView(View, Flag):
@@ -120,6 +123,7 @@ class PlayerView(View, Flag):
     level = auto()
     extra_level = auto()
     hand = auto()
+    in_richii = auto()
     discard_tiles = auto()
     fixed_meld = auto()
     meld_public_tiles = auto()
@@ -127,6 +131,7 @@ class PlayerView(View, Flag):
     bonus_tiles = auto()
 
     type__str = name | level | extra_level
+    type__bool = in_richii
     type__score = score
     type__tiles = hand | discard_tiles | meld_public_tiles | bonus_tiles
     type__melds = fixed_meld
