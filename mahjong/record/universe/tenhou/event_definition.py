@@ -1,11 +1,11 @@
 from typing import List, Union
 
 from mahjong.record.reader import TenhouGame
+from mahjong.record.universe.command import GameCommand
 from mahjong.record.universe.format import PlayerView, Update, GameView
-from mahjong.record.universe.command import GameProperty, GameCommand
+from mahjong.record.universe.tenhou.xml_macher import tenhou_command
 from mahjong.record.utils.builder import Builder
 from mahjong.record.utils.event import *
-from mahjong.record.universe.tenhou.xml_macher import tenhou_command
 
 
 def tile_str_list(tile_list: Union[str, List[int]]):

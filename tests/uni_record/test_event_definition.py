@@ -1,38 +1,26 @@
-import ast
-
 import pandas
+import pytest
 
 from mahjong.record.reader import from_file
 from mahjong.record.universe.format import PlayerView, Update
-from mahjong.record.universe.command import norm_value_str, GameCommand
+from mahjong.record.universe.command import GameCommand
 from mahjong.record.universe.tenhou import to_commands
-
-test_file = "tests/2009060321gm-00b9-0000-75b25bcf.xml"
-
-command_list = None
+from tests.uni_record.paifu_list import test_files
 
 
-def command_setup():
-    global command_list
-    commands = get_test_commands()
-    command_list = commands
+def to_commands_iter(files):
+    for file in files:
+        with open(file, "r") as f:
+            record = from_file(f)
+            commands = to_commands(record)
+            yield commands
 
 
-def get_test_commands():
-    with open(test_file, "r") as f:
+@pytest.mark.parametrize("file_name", test_files)
+def test_command_convert(file_name):
+    with open(file_name, "r") as f:
         record = from_file(f)
     commands = to_commands(record)
-    return commands
-
-
-command_setup()
-
-
-def test_command_convert():
-    with open(test_file, "r") as f:
-        record = from_file(f)
-    commands = to_commands(record)
-    print(commands)
     assert len(commands) > 1
 
 
@@ -46,7 +34,8 @@ def test_game_command_convert():
     assert GameCommand.from_record(record).to_record() == record
 
 
-def test_command_serialize():
+@pytest.mark.parametrize("command_list", to_commands_iter(test_files), ids=test_files)
+def test_command_serialize(command_list):
     df = pandas.DataFrame(
         (x.to_record() for x in command_list),
     )
@@ -59,7 +48,9 @@ def test_command_serialize():
     for a, b in zip(command_list, reconstructed_list):
         assert a.to_record() == b.to_record()
 
-def test_command_clean():
+
+@pytest.mark.parametrize("command_list", to_commands_iter(test_files), ids=test_files)
+def test_command_clean(command_list):
     df = pandas.DataFrame(
         (x.to_record() for x in command_list),
     )
