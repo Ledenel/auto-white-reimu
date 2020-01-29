@@ -1,11 +1,13 @@
 from typing import Union, Iterable
 
+from mahjong.record.player import TenhouPlayer
 from mahjong.record.reader import TenhouGame
 from mahjong.record.universe.command import GameCommand
-from mahjong.record.universe.format import PlayerView, Update, GameView
+from mahjong.record.universe.format import PlayerView, Update, GameView, RecordView, PlayerId
 from mahjong.record.universe.tenhou.xml_macher import tenhou_command
 from mahjong.record.utils.builder import Builder
 from mahjong.record.utils.event import *
+from mahjong.record.utils.value.gametype import GameType, if_value
 from mahjong.record.utils.value.meld import Kita
 
 
@@ -96,3 +98,50 @@ def open_hand(event: TenhouEvent):
                 yield cmd(prop=PlayerView.bonus_tiles, value=meld_value)
         with cmd.when(update=Update.REMOVE):
             yield cmd(prop=PlayerView.hand, value=tile_str_list(meld.self_tiles))
+
+
+@tenhou_command.match_name("GO")
+def game_type_command(event: TenhouEvent):
+    cmd = Builder(GameCommand)
+    game_type = GameType(event.attrib["type"])
+    with cmd.when(update=Update.REPLACE):
+        yield cmd(
+            prop=RecordView.play_level,
+            value=if_value(game_type.with_tips(), "若銀琥孔", "般上特鳳")[game_type.play_level()]
+        )
+        yield cmd(prop=RecordView.show_discard_shadow, value=game_type.show_discard_shadow())
+        yield cmd(prop=RecordView.play_wind_count, value=game_type.play_wind_count())
+        yield cmd(prop=RecordView.allow_tanyao_open, value=game_type.allow_tanyao_open())
+        yield cmd(prop=RecordView.speed_up, value=game_type.speed_up())
+        yield cmd(prop=RecordView.player_count, value=game_type.player_count())
+
+
+@tenhou_command.match_name("TAIKYOKU")
+def set_oya_command(event: TenhouEvent):
+    yield GameCommand(prop=GameView.oya, value=int(event.attrib['oya']), update=Update.REPLACE)
+
+
+@tenhou_command.match_name("UN")
+def set_player_command(event: TenhouEvent):
+    dan = number_list(event.attrib['dan'])
+    rate = number_list(event.attrib['rate'])
+    sex = event.attrib['sx'].split(",")
+    cmd = Builder(GameCommand)
+    for i in PlayerId:
+        player_id = i.value
+        name_attr = "n%s" % player_id
+        if name_attr in event.attrib and event.attrib[name_attr].strip() != "":
+            player = TenhouPlayer(
+                player_id,
+                event.attrib[name_attr],
+                dan[player_id],
+                rate[player_id],
+                sex[player_id]
+            )
+            with cmd.when(sub_scope=player_id, update=Update.REPLACE):
+                yield cmd(prop=PlayerView.name, value=player.name)
+                yield cmd(prop=PlayerView.level, value=player.level_str())
+                yield cmd(prop=PlayerView.extra_level, value=player.rate)
+
+
+

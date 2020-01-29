@@ -7,7 +7,10 @@ from mahjong.record.universe.format import ViewType, View
 def json_load_any(x):
     if x != x:
         return None
-    return json.loads(str(x))
+    str_rep = str(x)
+    if isinstance(x, bool):
+        str_rep = str_rep.lower()
+    return json.loads(str_rep)
 
 
 class PropertyTypeManager:

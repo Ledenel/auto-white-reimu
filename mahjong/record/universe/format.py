@@ -12,12 +12,14 @@ class PlayerId(Enum):
 class ViewScope(Flag):
     game = auto()
     player = auto()
+    record = auto()
 
     @staticmethod
     def scopes_with_multi_value():
         return {
             ViewScope.game: None,
             ViewScope.player: PlayerId,
+            ViewScope.record: None,
         }
 
 
@@ -25,6 +27,7 @@ class View:
     @staticmethod
     def registered_view():
         return {
+            ViewScope.record: RecordView,
             ViewScope.game: GameView,
             ViewScope.player: PlayerView,
         }
@@ -84,6 +87,19 @@ class ViewType(Flag):
 
     int = index | score
     list = tiles | melds
+
+
+class RecordView(View, Flag):
+    player_count = auto()
+    play_level = auto()
+    has_aka_dora = auto()
+    speed_up = auto()
+    allow_tanyao_open = auto()
+    play_wind_count = auto()
+    show_discard_shadow = auto()
+
+    type__index = player_count | has_aka_dora | speed_up | allow_tanyao_open | play_wind_count | show_discard_shadow
+    type__str = play_level
 
 
 class GameView(View, Flag):
