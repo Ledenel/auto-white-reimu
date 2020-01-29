@@ -143,5 +143,11 @@ def set_player_command(event: TenhouEvent):
                 yield cmd(prop=PlayerView.level, value=player.level_str())
                 yield cmd(prop=PlayerView.extra_level, value=player.rate)
 
-
+@tenhou_command.match_name("DORA")
+def dora_command(event: TenhouEvent):
+    yield GameCommand(
+        prop=GameView.dora_indicators,
+        update=Update.ADD,
+        value=tile_str_list(event.attrib["hai"])
+    )
 
