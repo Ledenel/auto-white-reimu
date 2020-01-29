@@ -20,7 +20,7 @@ def to_commands_iter(files):
 def test_command_convert(file_name):
     with open(file_name, "r") as f:
         record = from_file(f)
-    commands = to_commands(record)
+    commands = to_commands(record, strict=True)
     assert len(commands) > 1
 
 

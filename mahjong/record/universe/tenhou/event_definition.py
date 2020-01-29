@@ -186,6 +186,7 @@ def agari_command(event: TenhouEvent):
         for p_id in range(len(game.players)):
             yield cmd(prop=PlayerView.score, value=sc_delta_list[p_id], sub_scope=p_id)
 
+
 @tenhou_command.match_name("SHUFFLE")
 def shuffle_command(event: TenhouEvent):
     yield GameCommand(

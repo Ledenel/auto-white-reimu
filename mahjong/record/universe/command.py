@@ -176,7 +176,7 @@ class CommandTranslator:
     def translate(self, event: EventT) -> List[GameCommand]:
         pass
 
-    def __call__(self, event: EventT) -> List[GameCommand]:
+    def __call__(self, event: EventT, strict=False) -> List[GameCommand]:
         event = self.preprocess(event)
         return_value = self.translate(event)
         if return_value:
@@ -185,5 +185,8 @@ class CommandTranslator:
         if return_value:
             return self.postprocess(event, return_value)
         else:
-            logger.warning("event <{}> is not transformed to game commands.", event)
+            if strict:
+                raise ValueError("event <{}> is not transformed to game commands.".format(event))
+            else:
+                logger.warning("event <{}> is not transformed to game commands.", event)
             return []
