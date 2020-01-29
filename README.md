@@ -83,7 +83,12 @@ Now support tenhou.net only.
 **IT IS JUST A DEMO TO SHOW THE CONCEPTS, TRANSLATED COMMANDS AND STATES ARE NEITHER COMPLETE NOR CORRECT YET!**
 
 Type your tenhou.net log url (like`http://tenhou.net/0/?log=2019012600gm-0089-0000-100908f0&tw=0`).
-## Testing
+
+### Extend universal paifu format
+
+see Pull request [here](https://github.com/Ledenel/auto-white-reimu/pull/45) for more details.
+
+# Testing
 
 you could run test by executing `pip install .[test]` at root dir, this would install all dependence for you.
 
