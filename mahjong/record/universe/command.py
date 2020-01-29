@@ -67,7 +67,6 @@ class GameProperty:
         return self.view_property.scope
 
 
-
 _Game_command = namedtuple(
     "GameCommand_",
     field_names=[
@@ -79,6 +78,8 @@ _Game_command = namedtuple(
         "value",
     ]
 )
+
+
 class GameCommand:
     def __init__(self, *, prop: View, update: Update, sub_scope=None, value=None, timestamp=None):
         self.timestamp = timestamp
@@ -130,6 +131,7 @@ class GameCommand:
 EventT = TypeVar('EventT')
 EventTransform = Callable[[EventT], Iterable[GameCommand]]
 
+
 class CommandTranslator:
     def __init__(self):
         self.defaults = []
@@ -148,17 +150,24 @@ class CommandTranslator:
         self.defaults.append(func)
         return func
 
+    def preprocess(self, event: EventT) -> EventT:
+        return event
+
+    def postprocess(self, command: List[GameCommand]) -> List[GameCommand]:
+        return command
+
     def translate(self, event: EventT) -> List[GameCommand]:
         pass
 
     def __call__(self, event: EventT) -> List[GameCommand]:
+        event = self.preprocess(event)
         return_value = self.translate(event)
         if return_value:
             return return_value
         return_value = CommandTranslator.fallback_call(event, self.defaults)
         if return_value:
+            return_value = self.postprocess(return_value)
             return return_value
         else:
             logger.warning("event <{}> is not transformed to game commands.", event)
             return []
-
