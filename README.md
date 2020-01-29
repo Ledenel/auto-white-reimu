@@ -84,9 +84,11 @@ Now support tenhou.net only.
 
 Type your tenhou.net log url (like`http://tenhou.net/0/?log=2019012600gm-0089-0000-100908f0&tw=0`).
 
-### Extend universal paifu format
+For APIs, see [code here](https://github.com/Ledenel/auto-white-reimu/blob/master/mahjong/universe_paifu_convert.py). 
 
-see Pull request [here](https://github.com/Ledenel/auto-white-reimu/pull/45) for more details.
+### Extending universal paifu format
+
+See pull request [here](https://github.com/Ledenel/auto-white-reimu/pull/45) for more details.
 
 # Testing
 
