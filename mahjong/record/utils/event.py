@@ -81,7 +81,8 @@ class TenhouSubEvent:
 
 
 class TenhouEvent:
-    def __init__(self, xml_element: Element, *, context):
+    def __init__(self, xml_element: Element, *, context, timestamp=None):
+        self.timestamp = timestamp
         self._wrapped_xml_event = xml_element
         self.context_ = context
         draw = draw_tile_change(xml_element)

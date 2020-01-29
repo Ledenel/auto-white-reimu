@@ -134,7 +134,7 @@ def list_of_xml_configs(xml_element_list):
 
 class TenhouRecord:
     def __init__(self, events):
-        events = [TenhouEvent(event, context=self) for event in events]
+        events = [TenhouEvent(event, context=self, timestamp=i) for i, event in enumerate(events)]
         self.events = events
         head_events, *game_chunks = list(list(g) for _, g in StageGroupby(events, True, False, key=is_game_init))
         self._meta = list_of_xml_configs(head_events)

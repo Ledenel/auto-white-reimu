@@ -41,6 +41,7 @@ command_field_names = [
     "update_method",
     "value",
 ]
+
 _Game_command = namedtuple(
     "GameCommand_",
     field_names=command_field_names
@@ -79,7 +80,6 @@ class GameCommand:
     @staticmethod
     def clean(pandas_dataframe):
         return pandas_dataframe.apply(GameCommand.pandas_columns_clean, axis="columns")
-
 
     @staticmethod
     def to_dataframe(command_list):
@@ -167,16 +167,23 @@ class CommandTranslator:
         self.defaults.append(func)
         return func
 
+    def preprocess(self, event: EventT) -> EventT:
+        return event
+
+    def postprocess(self, event: EventT, command: List[GameCommand]) -> List[GameCommand]:
+        return command
+
     def translate(self, event: EventT) -> List[GameCommand]:
         pass
 
     def __call__(self, event: EventT) -> List[GameCommand]:
+        event = self.preprocess(event)
         return_value = self.translate(event)
         if return_value:
-            return return_value
+            return self.postprocess(event, return_value)
         return_value = CommandTranslator.fallback_call(event, self.defaults)
         if return_value:
-            return return_value
+            return self.postprocess(event, return_value)
         else:
             logger.warning("event <{}> is not transformed to game commands.", event)
             return []
