@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Union, Iterable
 
 from mahjong.record.reader import TenhouGame
 from mahjong.record.universe.command import GameCommand
@@ -6,9 +6,10 @@ from mahjong.record.universe.format import PlayerView, Update, GameView
 from mahjong.record.universe.tenhou.xml_macher import tenhou_command
 from mahjong.record.utils.builder import Builder
 from mahjong.record.utils.event import *
+from mahjong.record.utils.value.meld import Kita
 
 
-def tile_str_list(tile_list: Union[str, List[int]]):
+def tile_str_list(tile_list: Union[str, Iterable[int]]):
     if isinstance(tile_list, str):
         tile_list = number_list(tile_list)
 
@@ -76,6 +77,22 @@ def game_init_command(event: TenhouEvent):
                     yield cmd(prop=PlayerView.discard_tiles)
                     yield cmd(prop=PlayerView.fixed_meld)
                     yield cmd(prop=PlayerView.meld_public_tiles)
+                    yield cmd(prop=PlayerView.bonus_tiles)
                 yield cmd(prop=PlayerView.hand, value=tile_str_list(event.attrib['hai{}'.format(player_id)]))
                 yield cmd(prop=PlayerView.score, value=score_all[player_id] * 100)
 
+
+@tenhou_command.match_name("N")
+def open_hand(event: TenhouEvent):
+    meld = meld_from(event)
+    cmd = Builder(GameCommand)
+    with cmd.when(sub_scope=int(event.attrib["who"])):
+        with cmd.when(update=Update.ADD):
+            yield cmd(prop=PlayerView.meld_public_tiles, value=tile_str_list(meld.self_tiles))
+            meld_value = tile_str_list(meld.self_tiles | meld.borrowed_tiles)
+            if isinstance(meld, Kita):
+                yield cmd(prop=PlayerView.fixed_meld, value=[meld_value])
+            else:
+                yield cmd(prop=PlayerView.bonus_tiles, value=meld_value)
+        with cmd.when(update=Update.REMOVE):
+            yield cmd(prop=PlayerView.hand, value=tile_str_list(meld.self_tiles))
