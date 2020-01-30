@@ -82,10 +82,15 @@ class GameCommand:
         return pandas_dataframe.apply(GameCommand.pandas_columns_clean, axis="columns")
 
     @staticmethod
-    def to_dataframe(command_list):
-        return pandas.DataFrame(
-            (x.to_record() for x in command_list),
-        )
+    def to_dataframe(command_list, raw=False):
+        if raw:
+            return pandas.DataFrame(
+                (x.to_raw_record() for x in command_list),
+            )
+        else:
+            return pandas.DataFrame(
+                (x.to_record() for x in command_list),
+            )
 
     @staticmethod
     def read_clean_csv(csv_path):
