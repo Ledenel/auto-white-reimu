@@ -85,7 +85,8 @@ def game_init_command(event: TenhouEvent):
                     yield cmd(prop=PlayerView.bonus_tiles)
                 yield cmd(prop=PlayerView.in_richii, value=False)
                 yield cmd(prop=PlayerView.hand, value=tile_str_list(event.attrib['hai{}'.format(player_id)]))
-                yield cmd(prop=PlayerView.score, value=score_all[player_id] * 100)
+                with cmd.when(update=Update.ASSERT_EQUAL_OR_SET):
+                    yield cmd(prop=PlayerView.score, value=score_all[player_id] * 100)
 
 
 def _not_fully_support(event):
