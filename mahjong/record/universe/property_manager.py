@@ -1,6 +1,6 @@
 import ast
 import json
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 
 from mahjong.record.universe.format import ViewType, View
 
@@ -72,7 +72,7 @@ def empty_list():
 
 @prop_manager.register_equal_check(ViewType.tiles)
 def tiles_equal(expected, actual):
-    return set(expected) == set(actual)
+    return Counter(expected) == Counter(actual)
 
 
 @prop_manager.register_equal_check(None)

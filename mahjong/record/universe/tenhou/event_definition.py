@@ -182,6 +182,11 @@ def agari_command(event: TenhouEvent):
     sc_score_list = sc_list[::2]
     sc_delta_list = sc_list[1::2]
     cmd = Builder(GameCommand)
+    with cmd.when(update=Update.ASSERT_EQUAL, sub_scope=player_id):
+        expected_hand = tile_str_list(event.attrib["hai"])
+        if player_id != from_player_id:
+            expected_hand.remove(tile_str_list(event.attrib["machi"])[0])
+        yield cmd(prop=PlayerView.hand, value=expected_hand)
     with cmd.when(update=Update.ADD):
         for p_id in range(len(game.players)):
             with cmd.when(sub_scope=p_id):
