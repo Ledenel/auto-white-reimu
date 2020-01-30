@@ -1,4 +1,6 @@
+import xml.etree.ElementTree as ET
 import pandas
+from typing import Iterable
 
 from mahjong.record.reader import from_file, from_url
 from mahjong.record.universe.command import GameCommand
@@ -23,3 +25,23 @@ def parse_dataframe_from_tenhou_record(record, return_state=True, for_serialize=
         return command_df
     state_df = GameExecutor().execute_as_dataframe(commands)
     return command_df, state_df
+
+import re
+
+last_num = re.compile(r"(.*)([0-9])")
+def _event_df_iter(events: Iterable[ET.Element]):
+    for event in events:
+        result = {}
+        matched = last_num.match(event.tag)
+        if matched:
+            result["name"] = matched.group(0)
+            result["<tag>"] = matched.group(1)
+        else:
+            result["name"] = event.tag
+        result.update(event.attrib)
+        yield result
+
+def light_dataframe_from_file(file_path):
+    root_element = next(ET.parse(file_path).iter())
+    return pandas.DataFrame(_event_df_iter(root_element))
+
