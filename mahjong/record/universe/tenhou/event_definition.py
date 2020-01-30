@@ -179,12 +179,16 @@ def agari_command(event: TenhouEvent):
     player_id = int(event.attrib["who"])
     from_player_id = int(event.attrib["fromWho"])
     sc_list = number_list(event.attrib["sc"])
-    sc_origin_list = sc_list[::2]
+    sc_score_list = sc_list[::2]
     sc_delta_list = sc_list[1::2]
     cmd = Builder(GameCommand)
     with cmd.when(update=Update.ADD):
         for p_id in range(len(game.players)):
-            yield cmd(prop=PlayerView.score, value=sc_delta_list[p_id] * 100, sub_scope=p_id)
+            with cmd.when(sub_scope=p_id):
+                with cmd.when(update=Update.ASSERT_EQUAL):
+                    yield cmd(prop=PlayerView.score, value=sc_score_list[p_id] * 100)
+                yield cmd(prop=PlayerView.score, value=sc_delta_list[p_id] * 100)
+
 
 
 @tenhou_command.match_name("SHUFFLE")

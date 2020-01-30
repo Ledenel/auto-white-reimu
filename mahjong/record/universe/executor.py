@@ -2,6 +2,8 @@ import operator
 
 from typing import Iterable
 
+from loguru import logger
+
 from mahjong.record.universe.command import GameCommand
 from mahjong.record.universe.property_manager import prop_manager
 from mahjong.record.universe.format import *
@@ -109,7 +111,8 @@ class GameExecutor:
         df_states = df_states.apply(state_series_apply, axis="rows")
         return df_states
 
-    def __init__(self):
+    def __init__(self, strict_mode=False):
+        self.strict_mode = strict_mode
         self.executor = CombinedCommandExecutor([
             (list, listExecutor),
             (set, setExecutor),
@@ -175,6 +178,16 @@ class GameExecutor:
                 view_property,
                 prop_manager.get_default(view_property),
             )
+        elif method == Update.ASSERT_EQUAL:
+            expected = command.value
+            actual = view[view_property]
+            is_equal = prop_manager.equal_value(expected, actual, view=view_property)
+            msg = "{} != {} when executing {cmd}".format(expected, actual, cmd=command)
+            if self.strict_mode:
+                assert is_equal, msg
+            elif not is_equal:
+                logger.warning(msg)
+            result_state = curr_state
         else:
             raise ValueError("unrecognized", method)
         return result_state

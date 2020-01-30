@@ -8,7 +8,7 @@ from tests.uni_record.test_event_definition import to_commands_iter
 
 @pytest.mark.parametrize("commands", to_commands_iter(test_files), ids=test_files)
 def test_execute(commands):
-    assert len(list(GameExecutor().execute(commands))) > 1
+    assert len(list(GameExecutor(strict_mode=True).execute(commands))) > 1
 
 
 @pytest.mark.parametrize("commands", to_commands_iter(test_files), ids=test_files)

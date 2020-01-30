@@ -72,7 +72,7 @@ class GameCommand:
     #     ) for prop in props]
 
     def __str__(self):
-        return str(self.to_record())
+        return str(self.to_raw_record())
 
     def __repr__(self):
         return "{%s}" % str(self)

@@ -1,24 +1,27 @@
 import ast
 import json
+from collections import OrderedDict
 
 from mahjong.record.universe.format import ViewType, View
 
 
-def json_load_any(x):
-    if x != x:
-        return None
-    str_rep = str(x)
-    if isinstance(x, bool):
-        str_rep = str_rep.lower()
-    return json.loads(str_rep)
-
-
 class PropertyTypeManager:
     def __init__(self):
-        self._checker = {}
-        self._default_value_ctor = {}
-        self._value_to_str = {None: json.dumps}
-        self._str_to_value = {None: json_load_any}
+        self._checker = OrderedDict()
+        self._default_value_ctor = OrderedDict()
+        self._equality_check = OrderedDict()
+        self._value_to_str = OrderedDict()
+        self._str_to_value = OrderedDict()
+
+    def register_equal_check(self, name):
+        def _eq_checker(func):
+            self._equality_check[name] = func
+            return func
+
+        return _eq_checker
+
+    def equal_value(self, expected, actual, view: View = None):
+        return lookup_enum_table(self._equality_check, view, expected, actual)
 
     def register_to_str(self, name):
         def _to_str_wrapper(func):
@@ -65,6 +68,31 @@ prop_manager = PropertyTypeManager()
 @prop_manager.register_default_ctor(ViewType.list)
 def empty_list():
     return []
+
+
+@prop_manager.register_equal_check(ViewType.tiles)
+def tiles_equal(expected, actual):
+    return set(expected) == set(actual)
+
+
+@prop_manager.register_equal_check(None)
+def general_equal(expceted, actual):
+    return expceted == actual
+
+
+@prop_manager.register_to_str(None)
+def json_dump(x):
+    return json.dumps(x)
+
+
+@prop_manager.register_from_str(None)
+def json_load_any(x):
+    if x != x:
+        return None
+    str_rep = str(x)
+    if isinstance(x, bool):
+        str_rep = str_rep.lower()
+    return json.loads(str_rep)
 
 
 def assertion(func):
