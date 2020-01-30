@@ -154,7 +154,7 @@ class Update(Enum):
     ADD = auto()
     REMOVE = auto()
     RESET_DEFAULT = auto()
-    ASSERT_EQUAL = auto()
+    ASSERT_EQUAL_OR_SET = auto()
 
     def operand_num(self):
         return defaultdict(default_value_func(None), {

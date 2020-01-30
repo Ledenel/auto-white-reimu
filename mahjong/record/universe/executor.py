@@ -178,15 +178,16 @@ class GameExecutor:
                 view_property,
                 prop_manager.get_default(view_property),
             )
-        elif method == Update.ASSERT_EQUAL:
+        elif method == Update.ASSERT_EQUAL_OR_SET:
             expected = command.value
-            actual = view[view_property]
-            is_equal = prop_manager.equal_value(expected, actual, view=view_property)
-            msg = "{} != {} when executing {cmd}".format(expected, actual, cmd=command)
-            if self.strict_mode:
-                assert is_equal, msg
-            elif not is_equal:
-                logger.warning(msg)
+            if view_property in view:
+                actual = view[view_property]
+                is_equal = prop_manager.equal_value(expected, actual, view=view_property)
+                msg = "{} != {} when executing {cmd}".format(expected, actual, cmd=command)
+                if self.strict_mode:
+                    assert is_equal, msg
+                elif not is_equal:
+                    logger.warning(msg)
             result_state = view.set(
                 view_property,
                 command.value
@@ -222,6 +223,9 @@ class TransferDict:
 
     def __getitem__(self, item):
         return self.nested_dict[item]
+
+    def __contains__(self, item):
+        return item in self.nested_dict
 
     def __str__(self):
         return str(self.nested_dict)
