@@ -187,7 +187,10 @@ class GameExecutor:
                 assert is_equal, msg
             elif not is_equal:
                 logger.warning(msg)
-            result_state = curr_state
+            result_state = view.set(
+                view_property,
+                command.value
+            )
         else:
             raise ValueError("unrecognized", method)
         return result_state
