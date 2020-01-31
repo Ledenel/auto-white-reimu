@@ -1,10 +1,20 @@
+from collections import OrderedDict
+
 from mahjong.record.universe.command import GameCommand
 from mahjong.record.universe.format import Update
 from mahjong.record.universe.property_manager import prop_manager
 
 
 class GameInterpreter:
-    pass
+    def __init__(self):
+        self.state = OrderedDict()
+
+    def interpret(self, command: GameCommand):
+        key = (command.sub_scope_id, command.prop.view_property)
+        old = self.state.get(key, None)
+        new = execute_new_value(command, old_value=old)
+        self.state[key] = new
+        return new
 
 
 def execute_new_value(command, old_value):

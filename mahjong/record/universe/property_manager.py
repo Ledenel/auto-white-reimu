@@ -16,11 +16,6 @@ class PropertyMethod(Enum):
 class PropertyTypeManager:
     def __init__(self):
         self._func_mapper = OrderedDict()
-        self._checker = OrderedDict()
-        self._default_value_ctor = OrderedDict()
-        self._equality_check = OrderedDict()
-        self._value_to_str = OrderedDict()
-        self._str_to_value = OrderedDict()
 
     def register(self, typ, method):
         def _register_func(func):
@@ -68,6 +63,7 @@ def tiles_equal(expected, actual):
 @prop_manager.register(None, PropertyMethod.check_equal)
 def general_equal(expceted, actual):
     return expceted == actual
+
 
 @prop_manager.register(ViewType.str, PropertyMethod.to_str)
 @prop_manager.register(ViewType.str, PropertyMethod.from_str)
