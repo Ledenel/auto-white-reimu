@@ -1,15 +1,14 @@
 import operator
-
 from typing import Iterable
 
+import pandas as pd
 from loguru import logger
 
-from mahjong.record.universe.command import GameCommand
-from mahjong.record.universe.interpreter import execute_new_value, CombinedCommandExecutor
-from mahjong.record.universe.property_manager import prop_manager
-from mahjong.record.universe.format import *
 import mahjong.record.universe.format as mahjong_format
-import pandas as pd
+from mahjong.record.universe.command import GameCommand
+from mahjong.record.universe.format import *
+from mahjong.record.universe.interpreter import execute_new_value
+from mahjong.record.universe.property_manager import prop_manager
 
 
 def get_enums_from(module):
@@ -94,11 +93,6 @@ class GameExecutor:
 
     def __init__(self, strict_mode=False):
         self.strict_mode = strict_mode
-        self.executor = CombinedCommandExecutor([
-            (list, listExecutor),
-            (set, setExecutor),
-            (None, defaultExecutor),
-        ])
         state_dict = {
             enum: {
                 "single": {},

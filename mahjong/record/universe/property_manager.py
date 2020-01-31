@@ -92,13 +92,15 @@ def remove_all(lst: list, values: list):
         lst_r.remove(val)
     return lst_r
 
+
 @prop_manager.register(None, Update.ADD)
-def add_general(a,b):
-    return a+b
+def add_general(a, b):
+    return a + b
+
 
 @prop_manager.register(None, Update.REMOVE)
-def remove_general(a,b):
-    return a-b
+def remove_general(a, b):
+    return a - b
 
 
 def assertion(func):
