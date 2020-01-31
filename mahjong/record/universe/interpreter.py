@@ -18,7 +18,7 @@ def execute_new_value(executor, command, old_value):
     elif method == Update.ADD or method == Update.REMOVE:
         new_value = executor.execute_value(command, old_value)
     elif method == Update.RESET_DEFAULT:
-        new_value = prop_manager.get_default(view_property)
+        new_value = prop_manager.default_value(prop=view_property)
     elif method == Update.ASSERT_EQUAL_OR_SET:
         pass
     else:

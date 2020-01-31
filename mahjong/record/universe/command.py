@@ -135,7 +135,7 @@ class GameCommand:
             sub_scope_id=self.sub_scope_id,
             property=self.prop.view_property.name,
             update_method=self.prop.update_method.name,
-            value=prop_manager.to_str(self.value, self.prop.view_property),
+            value=prop_manager.to_str(self.value, prop=self.prop.view_property),
         )
 
     @staticmethod
@@ -145,7 +145,7 @@ class GameCommand:
             prop=view,
             update=Update[record.update_method],
             sub_scope=norm_empty(record.sub_scope_id),
-            value=prop_manager.from_str(record.value, view=view),
+            value=prop_manager.from_str(record.value, prop=view),
             timestamp=norm_empty(record.timestamp),
         )
 

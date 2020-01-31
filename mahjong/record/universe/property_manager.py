@@ -29,8 +29,8 @@ class PropertyTypeManager:
 
         return _register_func
 
-    def call(self, method, typ, *values):
-        return lookup_func_table(self._func_mapper, method, typ, *values)
+    def call(self, *values, prop, method):
+        return lookup_func_table(self._func_mapper, method, prop, *values)
 
     def register_equal_check(self, name):
         return self.register(name, PropertyMethod.check_equal)
@@ -39,8 +39,8 @@ class PropertyTypeManager:
         if item in PropertyMethod.__members__:
             mthd = PropertyMethod[item]
 
-            def _call_wrapper(*args, view: View = None):
-                return self.call(mthd, view, *args)
+            def _call_wrapper(*args, prop: View = None):
+                return self.call(*args, prop=prop, method=mthd)
 
             return _call_wrapper
         else:
@@ -56,9 +56,9 @@ class PropertyTypeManager:
             return func
 
         return _to_str_wrapper
-
-    def to_str(self, value, view: View = None):
-        return lookup_enum_table(self._value_to_str, view, value)
+    #
+    # def to_str(self, value, view: View = None):
+    #     return lookup_enum_table(self._value_to_str, view, value)
 
     def register_from_str(self, name):
         def _from_str_wrapper(func):
@@ -66,38 +66,31 @@ class PropertyTypeManager:
             return func
 
         return _from_str_wrapper
-
-    def from_str(self, str_value, view: View = None):
-        return lookup_enum_table(self._str_to_value, view, str_value)
-
-    def get_default(self, view: View):
-        return lookup_enum_table(self._default_value_ctor, view)
+    #
+    # def from_str(self, str_value, view: View = None):
+    #     return lookup_enum_table(self._str_to_value, view, str_value)
+    #
+    # def default_value(self, view: View):
+    #     return lookup_enum_table(self._default_value_ctor, view)
 
     def register_assertion_check(self, name):
         def _assertion_wrapper(func):
             checker = assertion(func)
-            self._checker[name] = checker
+            self.register(name, PropertyMethod.is_type)()
             return checker
 
         return _assertion_wrapper
-
-    def register_default_ctor(self, name):
-        def _default_value_wrapper(func):
-            self._default_value_ctor[name] = func
-            return func
-
-        return _default_value_wrapper
 
 
 prop_manager = PropertyTypeManager()
 
 
-@prop_manager.register_default_ctor(ViewType.list)
+@prop_manager.register(ViewType.list, PropertyMethod.default_value)
 def empty_list():
     return []
 
 
-@prop_manager.register_equal_check(ViewType.tiles)
+@prop_manager.register(ViewType.tiles, PropertyMethod.check_equal)
 def tiles_equal(expected, actual):
     return Counter(expected) == Counter(actual)
 
@@ -107,12 +100,12 @@ def general_equal(expceted, actual):
     return expceted == actual
 
 
-@prop_manager.register_to_str(None)
+@prop_manager.register(None, PropertyMethod.to_str)
 def json_dump(x):
     return json.dumps(x)
 
 
-@prop_manager.register_from_str(None)
+@prop_manager.register(None, PropertyMethod.from_str)
 def json_load_any(x):
     if x != x:
         return None
@@ -142,6 +135,6 @@ def lookup_enum_table(call_table, view, *args):
 
 def lookup_func_table(call_table, method, view, *args):
     for (typ, mthd), func in call_table.items():
-        if method == mthd and typ is None or (view is not None and view.type in typ):
+        if method == mthd and (typ is None or (view is not None and view.type in typ)):
             return func(*args)
     raise ValueError("no '{},{}' found in table {}.".format(view.type, method, call_table))

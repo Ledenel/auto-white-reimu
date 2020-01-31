@@ -77,7 +77,7 @@ def state_series_apply(x):
     col_last = x.name[-1]
     if hasattr(col_last, "type"):
         def from_str_view(t):
-            return prop_manager.from_str(t, col_last)
+            return prop_manager.from_str(t, prop=col_last)
 
         return x.apply(from_str_view)
     return x
@@ -145,7 +145,7 @@ class GameExecutor:
             expected = new_value
             if view_property in view:
                 actual = old_value
-                is_equal = prop_manager.check_equal(expected, actual, view=view_property)
+                is_equal = prop_manager.check_equal(expected, actual, prop=view_property)
                 msg = "{} != {} when executing {cmd}".format(expected, actual, cmd=command)
                 if self.strict_mode:
                     assert is_equal, msg
@@ -178,7 +178,7 @@ class TransferDict:
                 yield tuple(initial), v
 
     def flatten(self):
-        return dict((k, prop_manager.to_str(v, k[-1])) for k, v in self.flatten_iter())
+        return dict((k, prop_manager.to_str(v, prop=k[-1])) for k, v in self.flatten_iter())
 
     def __getattr__(self, item):
         return getattr(self.nested_dict, item)
