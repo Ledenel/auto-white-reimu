@@ -101,7 +101,7 @@ def open_hand(event: TenhouEvent):
         with cmd.when(update=Update.ADD):
             yield cmd(prop=PlayerView.meld_public_tiles, value=tile_str_list(meld.self_tiles))
             meld_value = tile_str_list(meld.self_tiles | meld.borrowed_tiles)
-            if isinstance(meld, Kita):
+            if not isinstance(meld, Kita):
                 yield cmd(prop=PlayerView.fixed_meld, value=[meld_value])
             else:
                 yield cmd(prop=PlayerView.bonus_tiles, value=meld_value)
