@@ -1,27 +1,43 @@
-import ast
 import json
 from collections import OrderedDict, Counter
+from enum import Enum, auto
 
 from mahjong.record.universe.format import ViewType, View
 
 
+class PropertyMethod(Enum):
+    default_value = auto()
+    is_type = auto()
+    check_equal = auto()
+    to_str = auto()
+    from_str = auto()
+
+
 class PropertyTypeManager:
     def __init__(self):
+        self._func_mapper = OrderedDict()
         self._checker = OrderedDict()
         self._default_value_ctor = OrderedDict()
         self._equality_check = OrderedDict()
         self._value_to_str = OrderedDict()
         self._str_to_value = OrderedDict()
 
-    def register_equal_check(self, name):
-        def _eq_checker(func):
-            self._equality_check[name] = func
+    def register(self, typ, method):
+        def _register_func(func):
+            self._func_mapper[(typ, method)] = func
             return func
 
-        return _eq_checker
+        return _register_func
+
+    def call(self, method, typ, *values):
+        return lookup_func_table(self._func_mapper, method, typ, *values)
+
+    def register_equal_check(self, name):
+        return self.register(name, PropertyMethod.check_equal)
 
     def equal_value(self, expected, actual, view: View = None):
-        return lookup_enum_table(self._equality_check, view, expected, actual)
+        return self.call(PropertyMethod.check_equal, view, expected, actual)
+        # return lookup_enum_table(self._equality_check, view, expected, actual)
 
     def register_to_str(self, name):
         def _to_str_wrapper(func):
@@ -111,3 +127,10 @@ def lookup_enum_table(call_table, view, *args):
         if typ is None or (view is not None and view.type in typ):
             return func(*args)
     raise ValueError("no '{}' found in table {}.".format(view.type, call_table))
+
+
+def lookup_func_table(call_table, method, view, *args):
+    for (typ, mthd), func in call_table.items():
+        if method == mthd and typ is None or (view is not None and view.type in typ):
+            return func(*args)
+    raise ValueError("no '{},{}' found in table {}.".format(view.type, method, call_table))
