@@ -5,7 +5,7 @@ from typing import Iterable
 from loguru import logger
 
 from mahjong.record.universe.command import GameCommand
-from mahjong.record.universe.interpreter import execute_new_value
+from mahjong.record.universe.interpreter import execute_new_value, CombinedCommandExecutor
 from mahjong.record.universe.property_manager import prop_manager
 from mahjong.record.universe.format import *
 import mahjong.record.universe.format as mahjong_format
@@ -71,27 +71,6 @@ setExecutor = {
 #     if k in self:
 #         return self
 #     self
-class CombinedCommandExecutor:
-    def __init__(self, executor_with_type):
-        self.executor_with_type = executor_with_type
-
-    def has_function(self, value, method: Update):
-        for typ, executor in self.executor_with_type:
-            if typ is None or isinstance(value, typ):
-                if method in executor:
-                    return True
-        return False
-
-    def execute_value(self, command: GameCommand, origin_value=None):
-        for typ, executor in self.executor_with_type:
-            if typ is None or isinstance(command.value, typ):
-                method = command.prop.update_method
-                if method.operand_num() == 2:
-                    return executor[method](origin_value, command.value)
-                elif method.operand_num() == 1:
-                    return executor[method](command.value)
-                elif method.operand_num() == 0:
-                    raise ValueError("Zero operand is not supported. Type of None value may be ambiguous.")
 
 
 def state_series_apply(x):
