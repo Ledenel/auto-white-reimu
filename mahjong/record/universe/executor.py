@@ -5,6 +5,7 @@ from typing import Iterable
 from loguru import logger
 
 from mahjong.record.universe.command import GameCommand
+from mahjong.record.universe.interpreter import execute_new_value
 from mahjong.record.universe.property_manager import prop_manager
 from mahjong.record.universe.format import *
 import mahjong.record.universe.format as mahjong_format
@@ -103,6 +104,7 @@ def state_series_apply(x):
     return x
 
 
+
 class GameExecutor:
     @staticmethod
     def read_clean_csv(csv_path):
@@ -156,30 +158,21 @@ class GameExecutor:
         return df
 
     def execute_update_state(self, command, curr_state):
-        method = command.prop.update_method
         view = GameExecutor.state_value(curr_state, command)
-        view_property = command.prop.view_property
-        new_value = command.value
-        if method == Update.REPLACE:
-            pass
-        # elif method == Update.CLEAR:
-        #     result_state = view.drop(view_property)
-        elif method == Update.ADD or method == Update.REMOVE:
-            new_value = self.executor.execute_value(command, view[view_property])
-        elif method == Update.RESET_DEFAULT:
-            new_value = prop_manager.get_default(view_property)
-        elif method == Update.ASSERT_EQUAL_OR_SET:
+        old_value = view.get(command.prop.view_property, None)
+        new_value, view_property = execute_new_value(self.executor, command, old_value)
+
+        if command.prop.update_method == Update.ASSERT_EQUAL_OR_SET:
             expected = new_value
             if view_property in view:
-                actual = view[view_property]
+                actual = old_value
                 is_equal = prop_manager.equal_value(expected, actual, view=view_property)
                 msg = "{} != {} when executing {cmd}".format(expected, actual, cmd=command)
                 if self.strict_mode:
                     assert is_equal, msg
                 elif not is_equal:
                     logger.warning(msg)
-        else:
-            raise ValueError("unrecognized", method)
+
         result_state = view.set(
             view_property,
             new_value,
