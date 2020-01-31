@@ -2,7 +2,7 @@ import json
 from collections import OrderedDict, Counter
 from enum import Enum, auto
 
-from mahjong.record.universe.format import ViewType, View
+from mahjong.record.universe.format import ViewType, View, Update
 
 
 class PropertyMethod(Enum):
@@ -83,6 +83,22 @@ def json_load_any(x):
     if isinstance(x, bool):
         str_rep = str_rep.lower()
     return json.loads(str_rep)
+
+
+@prop_manager.register(ViewType.list, Update.REMOVE)
+def remove_all(lst: list, values: list):
+    lst_r = lst.copy()
+    for val in values:
+        lst_r.remove(val)
+    return lst_r
+
+@prop_manager.register(None, Update.ADD)
+def add_general(a,b):
+    return a+b
+
+@prop_manager.register(None, Update.REMOVE)
+def remove_general(a,b):
+    return a-b
 
 
 def assertion(func):
