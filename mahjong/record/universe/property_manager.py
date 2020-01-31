@@ -32,9 +32,6 @@ class PropertyTypeManager:
     def call(self, *values, prop, method):
         return lookup_func_table(self._func_mapper, method, prop, *values)
 
-    def register_equal_check(self, name):
-        return self.register(name, PropertyMethod.check_equal)
-
     def __getattr__(self, item):
         if item in PropertyMethod.__members__:
             mthd = PropertyMethod[item]
@@ -45,33 +42,6 @@ class PropertyTypeManager:
             return _call_wrapper
         else:
             return getattr(super(), item)
-
-    # def check_equal(self, expected, actual, view: View = None):
-    #     return self.call(PropertyMethod.check_equal, view, expected, actual)
-    #     # return lookup_enum_table(self._equality_check, view, expected, actual)
-
-    def register_to_str(self, name):
-        def _to_str_wrapper(func):
-            self._value_to_str[name] = func
-            return func
-
-        return _to_str_wrapper
-    #
-    # def to_str(self, value, view: View = None):
-    #     return lookup_enum_table(self._value_to_str, view, value)
-
-    def register_from_str(self, name):
-        def _from_str_wrapper(func):
-            self._str_to_value[name] = func
-            return func
-
-        return _from_str_wrapper
-    #
-    # def from_str(self, str_value, view: View = None):
-    #     return lookup_enum_table(self._str_to_value, view, str_value)
-    #
-    # def default_value(self, view: View):
-    #     return lookup_enum_table(self._default_value_ctor, view)
 
     def register_assertion_check(self, name):
         def _assertion_wrapper(func):
