@@ -1,17 +1,19 @@
-from typing import TypeVar, Callable, Iterable, List
+from typing import TypeVar, Callable, Iterable, List, Mapping
 
 from loguru import logger
 
 from mahjong.record.universe.command import GameCommand
+from mahjong.record.universe.interpreter import GameInterpreter
 
 EventT = TypeVar('EventT')
-EventTransform = Callable[[EventT], Iterable[GameCommand]]
+EventTransform = Callable[[EventT, Mapping], Iterable[GameCommand]]
 
 
 class CommandTranslator:
     def __init__(self):
         self.defaults = []
         self.defaults: List[EventTransform]
+        self.interpreter = GameInterpreter()
 
     @staticmethod
     def fallback_call(event, matchers: List[EventTransform]) -> List[GameCommand]:

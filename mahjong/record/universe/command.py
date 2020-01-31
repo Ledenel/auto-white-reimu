@@ -38,6 +38,7 @@ command_field_names = [
     "property",
     "update_method",
     "value",
+    "state"
 ]
 
 _Game_command = namedtuple(
@@ -49,7 +50,7 @@ command_field_names_set = set(command_field_names)
 
 
 class GameCommand:
-    def __init__(self, *, prop: View, update: Update, sub_scope=None, value=None, timestamp=None):
+    def __init__(self, *, prop: View, update: Update, sub_scope=None, value=None, timestamp=None, state=None):
         self.timestamp = timestamp
         # if value is None and prop.default_ctor is not None and prop.update_method != Update.CLEAR:
         #     self.value = prop.default_ctor()
@@ -58,6 +59,7 @@ class GameCommand:
         self.value = value
         self.property = prop
         self.update_method = update
+        self.state = state
         self.prop = GameProperty(self.property, self.update_method)
 
     # @staticmethod
@@ -114,6 +116,7 @@ class GameCommand:
             property=self.prop.view_property,
             update_method=self.prop.update_method,
             value=self.value,
+            state=self.state,
         )
 
     @staticmethod
@@ -124,6 +127,7 @@ class GameCommand:
             sub_scope=norm_empty(record.sub_scope_id),
             value=norm_empty(record.value),
             timestamp=norm_empty(record.timestamp),
+            state=norm_empty(record.state),
         )
 
     def to_record(self):
@@ -134,6 +138,7 @@ class GameCommand:
             property=self.prop.view_property.name,
             update_method=self.prop.update_method.name,
             value=prop_manager.to_str(self.value, prop=self.prop.view_property),
+            state=prop_manager.to_str(self.state, prop=self.prop.view_property),
         )
 
     @staticmethod
@@ -145,6 +150,7 @@ class GameCommand:
             sub_scope=norm_empty(record.sub_scope_id),
             value=prop_manager.from_str(record.value, prop=view),
             timestamp=norm_empty(record.timestamp),
+            state=prop_manager.from_str(record.state, prop=view),
         )
 
 

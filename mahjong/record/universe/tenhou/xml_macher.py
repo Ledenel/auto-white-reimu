@@ -30,6 +30,7 @@ class TenhouCommandTranslator(CommandTranslator):
         return _matcher_decor
 
     def postprocess(self, event: TenhouEvent, command: List[GameCommand]) -> List[GameCommand]:
+        super().postprocess(event, command)
         for cmd in command:
             cmd.timestamp = event.timestamp
         return command
