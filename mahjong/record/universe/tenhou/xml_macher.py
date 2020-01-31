@@ -29,11 +29,11 @@ class TenhouCommandTranslator(CommandTranslator):
 
         return _matcher_decor
 
-    def postprocess(self, event: TenhouEvent, command: List[GameCommand]) -> List[GameCommand]:
-        super().postprocess(event, command)
-        for cmd in command:
+    def postprocess(self, event: TenhouEvent, commands: List[GameCommand]) -> List[GameCommand]:
+        super().postprocess(event, commands)
+        for cmd in commands:
             cmd.timestamp = event.timestamp
-        return command
+        return commands
 
     def match_attr(self, name: str) -> Callable[[EventTransform], EventTransform]:
         def _matcher_decor(func: EventTransform):

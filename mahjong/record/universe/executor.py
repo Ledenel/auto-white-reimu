@@ -33,21 +33,6 @@ def replace_enum_values(value_str):
 def null():
     return None
 
-
-defaultExecutor = {
-    Update.RESET_DEFAULT: null,
-    Update.ADD: operator.add,
-    Update.REMOVE: operator.sub,
-}
-
-
-def fill_value_executor():
-    return {
-        Update.ADD: operator.add,
-        Update.REMOVE: operator.sub,
-    }
-
-
 def remove_all(lst: list, values: list):
     lst_r = lst.copy()
     for val in values:

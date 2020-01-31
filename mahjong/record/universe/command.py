@@ -52,24 +52,12 @@ command_field_names_set = set(command_field_names)
 class GameCommand:
     def __init__(self, *, prop: View, update: Update, sub_scope=None, value=None, timestamp=None, state=None):
         self.timestamp = timestamp
-        # if value is None and prop.default_ctor is not None and prop.update_method != Update.CLEAR:
-        #     self.value = prop.default_ctor()
-        # else:
         self.sub_scope_id = sub_scope
         self.value = value
         self.property = prop
         self.update_method = update
         self.state = state
         self.prop = GameProperty(self.property, self.update_method)
-
-    # @staticmethod
-    # def multi_command(props: Iterable[GameProperty], sub_scope_id=None, value=None, timestamp=None):
-    #     return [GameCommand(
-    #         prop,
-    #         sub_scope_id=sub_scope_id,
-    #         value=value,
-    #         timestamp=timestamp
-    #     ) for prop in props]
 
     def __str__(self):
         return str(self.to_raw_record())

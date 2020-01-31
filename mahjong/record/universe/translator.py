@@ -31,8 +31,10 @@ class CommandTranslator:
     def preprocess(self, event: EventT) -> EventT:
         return event
 
-    def postprocess(self, event: EventT, command: List[GameCommand]) -> List[GameCommand]:
-        return command
+    def postprocess(self, event: EventT, commands: List[GameCommand]) -> List[GameCommand]:
+        for cmd in commands:
+            cmd.state = self.interpreter.interpret(cmd)
+        return commands
 
     def translate(self, event: EventT) -> List[GameCommand]:
         pass
