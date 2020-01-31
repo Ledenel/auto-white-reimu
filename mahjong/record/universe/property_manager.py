@@ -96,13 +96,6 @@ def assertion(func):
     return _check_assert
 
 
-def lookup_enum_table(call_table, view, *args):
-    for typ, func in call_table.items():
-        if typ is None or (view is not None and view.type in typ):
-            return func(*args)
-    raise ValueError("no '{}' found in table {}.".format(view.type, call_table))
-
-
 def lookup_func_table(call_table, method, view, *args):
     for (typ, mthd), func in call_table.items():
         if method == mthd and (typ is None or (view is not None and view.type in typ)):
