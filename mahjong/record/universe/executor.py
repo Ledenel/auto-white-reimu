@@ -130,11 +130,11 @@ class GameExecutor:
         df.columns = pd.MultiIndex.from_tuples(df.columns)
         return df
 
-    def execute_update_state(self, command, curr_state):
+    def execute_update_state(self, command: GameCommand, curr_state):
         view = GameExecutor.state_value(curr_state, command)
         old_value = view.get(command.prop.view_property, None)
-        new_value, view_property = execute_new_value(command, old_value)
-
+        new_value = execute_new_value(command, old_value)
+        view_property = command.prop.view_property
         if command.prop.update_method == Update.ASSERT_EQUAL_OR_SET:
             expected = new_value
             if view_property in view:

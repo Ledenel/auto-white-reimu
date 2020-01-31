@@ -23,4 +23,4 @@ def execute_new_value(command, old_value):
         pass
     else:
         raise ValueError("unrecognized", method)
-    return new_value, view_property
+    return new_value
