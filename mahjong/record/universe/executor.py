@@ -139,7 +139,7 @@ class GameExecutor:
     def execute_update_state(self, command, curr_state):
         view = GameExecutor.state_value(curr_state, command)
         old_value = view.get(command.prop.view_property, None)
-        new_value, view_property = execute_new_value(self.executor, command, old_value)
+        new_value, view_property = execute_new_value(command, old_value)
 
         if command.prop.update_method == Update.ASSERT_EQUAL_OR_SET:
             expected = new_value

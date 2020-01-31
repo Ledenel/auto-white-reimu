@@ -7,7 +7,7 @@ class GameInterpreter:
     pass
 
 
-def execute_new_value(executor, command, old_value):
+def execute_new_value(command, old_value):
     method = command.prop.update_method
     view_property = command.prop.view_property
     new_value = command.value
