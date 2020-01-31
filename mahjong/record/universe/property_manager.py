@@ -102,7 +102,7 @@ def tiles_equal(expected, actual):
     return Counter(expected) == Counter(actual)
 
 
-@prop_manager.register_equal_check(None)
+@prop_manager.register(None, PropertyMethod.check_equal)
 def general_equal(expceted, actual):
     return expceted == actual
 
