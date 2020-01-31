@@ -35,9 +35,20 @@ class PropertyTypeManager:
     def register_equal_check(self, name):
         return self.register(name, PropertyMethod.check_equal)
 
-    def equal_value(self, expected, actual, view: View = None):
-        return self.call(PropertyMethod.check_equal, view, expected, actual)
-        # return lookup_enum_table(self._equality_check, view, expected, actual)
+    def __getattr__(self, item):
+        if item in PropertyMethod.__members__:
+            mthd = PropertyMethod[item]
+
+            def _call_wrapper(*args, view: View = None):
+                return self.call(mthd, view, *args)
+
+            return _call_wrapper
+        else:
+            return getattr(super(), item)
+
+    # def check_equal(self, expected, actual, view: View = None):
+    #     return self.call(PropertyMethod.check_equal, view, expected, actual)
+    #     # return lookup_enum_table(self._equality_check, view, expected, actual)
 
     def register_to_str(self, name):
         def _to_str_wrapper(func):

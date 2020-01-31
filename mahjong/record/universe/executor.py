@@ -145,7 +145,7 @@ class GameExecutor:
             expected = new_value
             if view_property in view:
                 actual = old_value
-                is_equal = prop_manager.equal_value(expected, actual, view=view_property)
+                is_equal = prop_manager.check_equal(expected, actual, view=view_property)
                 msg = "{} != {} when executing {cmd}".format(expected, actual, cmd=command)
                 if self.strict_mode:
                     assert is_equal, msg
