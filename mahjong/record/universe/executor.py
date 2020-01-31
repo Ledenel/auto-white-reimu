@@ -159,27 +159,17 @@ class GameExecutor:
         method = command.prop.update_method
         view = GameExecutor.state_value(curr_state, command)
         view_property = command.prop.view_property
+        new_value = command.value
         if method == Update.REPLACE:
-            result_state = view.set(
-                view_property,
-                command.value
-            )
-        elif method == Update.CLEAR:
-            result_state = view.drop(view_property)
+            pass
+        # elif method == Update.CLEAR:
+        #     result_state = view.drop(view_property)
         elif method == Update.ADD or method == Update.REMOVE:
-            result_state = view.set(
-                view_property,
-                self.executor.execute_value(
-                    command, view[view_property]
-                ),
-            )
+            new_value = self.executor.execute_value(command, view[view_property])
         elif method == Update.RESET_DEFAULT:
-            result_state = view.set(
-                view_property,
-                prop_manager.get_default(view_property),
-            )
+            new_value = prop_manager.get_default(view_property)
         elif method == Update.ASSERT_EQUAL_OR_SET:
-            expected = command.value
+            expected = new_value
             if view_property in view:
                 actual = view[view_property]
                 is_equal = prop_manager.equal_value(expected, actual, view=view_property)
@@ -188,12 +178,12 @@ class GameExecutor:
                     assert is_equal, msg
                 elif not is_equal:
                     logger.warning(msg)
-            result_state = view.set(
-                view_property,
-                command.value
-            )
         else:
             raise ValueError("unrecognized", method)
+        result_state = view.set(
+            view_property,
+            new_value,
+        )
         return result_state
 
 
