@@ -69,6 +69,11 @@ def tiles_equal(expected, actual):
 def general_equal(expceted, actual):
     return expceted == actual
 
+@prop_manager.register(ViewType.str, PropertyMethod.to_str)
+@prop_manager.register(ViewType.str, PropertyMethod.from_str)
+def plain_str(x):
+    return str(x)
+
 
 @prop_manager.register(None, PropertyMethod.to_str)
 def json_dump(x):
@@ -116,6 +121,6 @@ def assertion(func):
 
 def lookup_func_table(call_table, method, view, *args):
     for (typ, mthd), func in call_table.items():
-        if method == mthd and (typ is None or (view is not None and view.type in typ)):
+        if method == mthd and (typ is None or (view is not None and hasattr(view, "type") and view.type in typ)):
             return func(*args)
     raise ValueError("no '{},{}' found in table {}.".format(view.type, method, call_table))
