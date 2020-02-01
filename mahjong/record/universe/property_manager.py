@@ -49,6 +49,9 @@ class PropertyTypeManager:
 
 prop_manager = PropertyTypeManager()
 
+@prop_manager.register(ViewType.index, PropertyMethod.default_value)
+def default_index():
+    return 0
 
 @prop_manager.register(ViewType.list, PropertyMethod.default_value)
 def empty_list():

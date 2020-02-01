@@ -58,6 +58,7 @@ def discard_command(event: TenhouEvent, ctx):
                 sub_scope=discard['player'],
                 value=tile_str_list([discard['tile']]),
         ):
+            yield cmd(prop=PlayerView.round, update=Update.ADD, value=1)
             yield cmd(prop=PlayerView.hand, update=Update.REMOVE)
             yield cmd(prop=PlayerView.discard_tiles, update=Update.ADD)
 
@@ -83,6 +84,7 @@ def game_init_command(event: TenhouEvent, ctx):
                     yield cmd(prop=PlayerView.fixed_meld)
                     yield cmd(prop=PlayerView.meld_public_tiles)
                     yield cmd(prop=PlayerView.bonus_tiles)
+                    yield cmd(prop=PlayerView.round)
                 yield cmd(prop=PlayerView.in_richii, value=False)
                 yield cmd(prop=PlayerView.hand, value=tile_str_list(event.attrib['hai{}'.format(player_id)]))
                 with cmd.when(update=Update.ASSERT_EQUAL_OR_SET):

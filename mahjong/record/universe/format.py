@@ -129,8 +129,10 @@ class PlayerView(View, Flag):
     meld_public_tiles = auto()
     score = auto()
     bonus_tiles = auto()
+    round = auto()
 
     type__str = name | level | extra_level
+    type__index = round
     type__bool = in_richii
     type__score = score
     type__tiles = hand | discard_tiles | meld_public_tiles | bonus_tiles
