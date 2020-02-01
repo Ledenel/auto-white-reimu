@@ -42,12 +42,9 @@ def discard_tile_tenhou(event):
 def draw_command(event: TenhouEvent, ctx):
     draw = draw_tile_tenhou(event)
     if draw:
-        yield GameCommand(
-            prop=PlayerView.hand,
-            update=Update.ADD,
-            sub_scope=draw['player'],
-            value=tile_str_list([draw['tile']])
-        )
+        cmd = Builder(GameCommand)
+        with cmd.when(update=Update.ADD, sub_scope=draw['player']):
+            yield hand_update(cmd, [draw['tile']], ctx)
 
 
 @tenhou_command.default_event
@@ -91,9 +88,32 @@ def game_init_command(event: TenhouEvent, ctx):
                     yield cmd(prop=PlayerView.bonus_tiles)
                     yield cmd(prop=PlayerView.round)
                 yield cmd(prop=PlayerView.in_richii, value=False)
-                yield cmd(prop=PlayerView.hand, value=tile_str_list(event.attrib['hai{}'.format(player_id)]))
+                hand_raw = event.attrib['hai{}'.format(player_id)]
+                yield hand_update(cmd, hand_raw, ctx)
                 with cmd.when(update=Update.ASSERT_EQUAL_OR_SET):
                     yield cmd(prop=PlayerView.score, value=score_all[player_id] * 100)
+
+
+def hand_update(cmd: Builder, hand_raw, ctx):
+    update_method = cmd.inner_state.merged_dict["update"]
+    player_id = cmd.inner_state.merged_dict["sub_scope"]
+    update_method: Update
+    key = (player_id, "_hand_tenhou")
+    old_set = ctx.get(key, set())
+    if isinstance(hand_raw, str):
+        hand_raw = number_list(hand_raw)
+    hand_set = set(hand_raw)
+    new_set = old_set
+    if update_method == Update.ADD:
+        new_set = old_set | hand_set
+    elif update_method == Update.REMOVE:
+        new_set = old_set - hand_set
+    elif update_method == Update.RESET_DEFAULT:
+        new_set = set()
+    elif update_method == Update.REPLACE:
+        new_set = hand_set
+    ctx[key] = new_set
+    return cmd(prop=PlayerView.hand, value=tile_str_list(hand_raw))
 
 
 def _not_fully_support(event):
@@ -113,7 +133,7 @@ def open_hand(event: TenhouEvent, ctx):
             else:
                 yield cmd(prop=PlayerView.bonus_tiles, value=meld_value)
         with cmd.when(update=Update.REMOVE):
-            yield cmd(prop=PlayerView.hand, value=tile_str_list(meld.self_tiles))
+            yield hand_update(cmd, meld.self_tiles, ctx)
 
 
 @tenhou_command.match_name("GO")
