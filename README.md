@@ -90,7 +90,18 @@ Type your tenhou.net log url (like`http://tenhou.net/0/?log=2019012600gm-0089-00
 
 For APIs, see [code here](https://github.com/Ledenel/auto-white-reimu/blob/master/mahjong/universe_paifu_convert.py). 
 
-
+Extra APIs are provided to analyse the csv with usage examples below:
+```python
+import pandas as pd
+from mahjong.record.universe.command import GameCommand
+df = pd.read_csv("command_list.csv")
+# clean up df, make states as python value
+df = df.apply(GameCommand.pandas_columns_clean, axis="columns")
+# extract all state changes to columns
+df_state = df.pivot(columns="property", values="state")
+# fill in all state to get exact state for each command executed.
+df_state = df_state.ffill()
+```
 
 ### Extending universal paifu format
 
