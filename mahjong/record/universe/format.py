@@ -125,6 +125,7 @@ class PlayerView(View, Flag):
     hand = auto()
     in_richii = auto()
     discard_tiles = auto()
+    discard_from_hand = auto()
     fixed_meld = auto()
     meld_public_tiles = auto()
     score = auto()
@@ -137,6 +138,7 @@ class PlayerView(View, Flag):
     type__score = score
     type__tiles = hand | discard_tiles | meld_public_tiles | bonus_tiles
     type__melds = fixed_meld
+    type__list = discard_from_hand
 
 
 # public_tiles =

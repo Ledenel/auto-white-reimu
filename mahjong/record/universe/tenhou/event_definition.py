@@ -44,7 +44,7 @@ def draw_command(event: TenhouEvent, ctx):
     if draw:
         cmd = Builder(GameCommand)
         with cmd.when(update=Update.ADD, sub_scope=draw['player']):
-            yield hand_update(cmd, [draw['tile']], ctx)
+            yield from hand_update(cmd, [draw['tile']], ctx)
 
 
 @tenhou_command.default_event
@@ -52,12 +52,19 @@ def discard_command(event: TenhouEvent, ctx):
     discard = discard_tile_tenhou(event)
     cmd = Builder(GameCommand)
     if discard:
+        tile_raw = discard['tile']
+        player_id = discard['player']
         with cmd.when(
-                sub_scope=discard['player'],
-                value=tile_str_list([discard['tile']]),
+                sub_scope=player_id,
+                value=tile_str_list([tile_raw]),
         ):
             yield cmd(prop=PlayerView.round, update=Update.ADD, value=1)
-            yield cmd(prop=PlayerView.hand, update=Update.REMOVE)
+            discard = int(tile_raw)
+            draw_tile = ctx[(player_id, "_right_most_tile_int")]
+            yield cmd(prop=PlayerView.discard_from_hand, update=Update.ADD,
+                      value=[discard != draw_tile])
+            with cmd.when(update=Update.REMOVE):
+                yield from hand_update(cmd, str(tile_raw), ctx)
             yield cmd(prop=PlayerView.discard_tiles, update=Update.ADD)
 
 
@@ -89,7 +96,7 @@ def game_init_command(event: TenhouEvent, ctx):
                     yield cmd(prop=PlayerView.round)
                 yield cmd(prop=PlayerView.in_richii, value=False)
                 hand_raw = event.attrib['hai{}'.format(player_id)]
-                yield hand_update(cmd, hand_raw, ctx)
+                yield from hand_update(cmd, hand_raw, ctx)
                 with cmd.when(update=Update.ASSERT_EQUAL_OR_SET):
                     yield cmd(prop=PlayerView.score, value=score_all[player_id] * 100)
 
@@ -98,22 +105,20 @@ def hand_update(cmd: Builder, hand_raw, ctx):
     update_method = cmd.inner_state.merged_dict["update"]
     player_id = cmd.inner_state.merged_dict["sub_scope"]
     update_method: Update
-    key = (player_id, "_hand_tenhou")
-    old_set = ctx.get(key, set())
+    key = (player_id, "_right_most_tile_int")
+    new_tile = ctx.get(key, None)
     if isinstance(hand_raw, str):
         hand_raw = number_list(hand_raw)
-    hand_set = set(hand_raw)
-    new_set = old_set
     if update_method == Update.ADD:
-        new_set = old_set | hand_set
+        assert len(hand_raw) == 1, "Player can only draw one tile."
+        new_tile = hand_raw[0]
     elif update_method == Update.REMOVE:
-        new_set = old_set - hand_set
-    elif update_method == Update.RESET_DEFAULT:
-        new_set = set()
+        new_tile = None
     elif update_method == Update.REPLACE:
-        new_set = hand_set
-    ctx[key] = new_set
-    return cmd(prop=PlayerView.hand, value=tile_str_list(hand_raw))
+        yield cmd(update=Update.RESET_DEFAULT, prop=PlayerView.discard_from_hand)
+        new_tile = None
+    ctx[key] = new_tile
+    yield cmd(prop=PlayerView.hand, value=tile_str_list(hand_raw))
 
 
 def _not_fully_support(event):
@@ -133,7 +138,7 @@ def open_hand(event: TenhouEvent, ctx):
             else:
                 yield cmd(prop=PlayerView.bonus_tiles, value=meld_value)
         with cmd.when(update=Update.REMOVE):
-            yield hand_update(cmd, meld.self_tiles, ctx)
+            yield from hand_update(cmd, meld.self_tiles, ctx)
 
 
 @tenhou_command.match_name("GO")
