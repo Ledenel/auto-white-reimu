@@ -2,6 +2,7 @@ from typing import Union, Iterable
 
 from loguru import logger
 
+from mahjong.record.category import SubCategory
 from mahjong.record.player import TenhouPlayer
 from mahjong.record.reader import TenhouGame
 from mahjong.record.universe.command import GameCommand
@@ -66,17 +67,21 @@ def discard_command(event: TenhouEvent, ctx):
 @tenhou_command.match_name("INIT")
 def game_init_command(event: TenhouEvent, ctx):
     _not_fully_support(event)
-    game_context: TenhouGame = event.context_
+    seed = number_list(event.attrib["seed"])
+    game_indexer = ctx["_game_indexer"]
+    sub_game = seed[1]
+    richii_counts = seed[2]
+    initial_dora = seed[-1]
     cmd = Builder(GameCommand)
     with cmd.when(update=Update.REPLACE):
-        prevailing, game_index = game_context.game_index()
+        prevailing, game_index = game_indexer.category(seed[0])
         yield cmd(prop=GameView.wind, value=prevailing)
         yield cmd(prop=GameView.round, value=game_index)
-        yield cmd(prop=GameView.sub_round, value=game_context.sub_game_index())
-        yield cmd(prop=GameView.richii_remain_scores, value=game_context.richii_counts() * 1000)
-        yield cmd(prop=GameView.oya, value=game_context.east_index)
-        yield cmd(prop=GameView.dora_indicators, value=tile_str_list([game_context.initial_dora()]))
-        for player_id in range(game_context.game_type.player_count()):
+        yield cmd(prop=GameView.sub_round, value=sub_game)
+        yield cmd(prop=GameView.richii_remain_scores, value=richii_counts * 1000)
+        yield cmd(prop=GameView.oya, value=int(event.attrib["oya"]))
+        yield cmd(prop=GameView.dora_indicators, value=tile_str_list([initial_dora]))
+        for player_id in range(ctx[(None, RecordView.player_count)]):
             score_all = number_list(event.attrib['ten'])
             with cmd.when(sub_scope=player_id):
                 with cmd.when(update=Update.RESET_DEFAULT):
@@ -115,6 +120,10 @@ def open_hand(event: TenhouEvent, ctx):
 def game_type_command(event: TenhouEvent, ctx):
     cmd = Builder(GameCommand)
     game_type = GameType(event.attrib["type"])
+    ctx["_game_indexer"] = SubCategory(
+        game_type.play_wind_count() + 1, 4, caption="prevailing_and_game",
+        names=["prevailing", "game_index"]
+    )
     with cmd.when(update=Update.REPLACE):
         yield cmd(
             prop=RecordView.play_level,
