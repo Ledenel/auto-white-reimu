@@ -85,16 +85,15 @@ class GameCommand:
         return GameCommand.clean(pandas.read_csv(csv_path))
 
     @staticmethod
-    def pandas_columns_clean(row):
+    def pandas_columns_clean(row_origin):
         # remove index
-        row = row[command_field_names]
-        series_ctor = type(row)
+        row = row_origin[command_field_names]
         record = _Game_command(**row)
         command = GameCommand.from_record(record)
-        target = numpy.array(command.to_raw_record(), dtype=object)
-        target_series = series_ctor(target)
-        target_series.index = command_field_names
-        return target_series
+        row_return = row_origin.copy()
+        for name, value in command.to_raw_record()._asdict().items():
+            row_return[name] = value
+        return row_return
 
     def to_raw_record(self):
         return _Game_command(
@@ -140,5 +139,3 @@ class GameCommand:
             timestamp=norm_empty(record.timestamp),
             state=prop_manager.from_str(record.state, prop=view),
         )
-
-

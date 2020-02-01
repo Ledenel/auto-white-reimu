@@ -78,6 +78,10 @@ with open(filename, "w", encoding='utf-8') as f:
 
 This converter extract paifus as a universal format, to csv files for easy analysis.
 
+**After installation**, you can run the tools with
+
+`paifu-extract`
+
 Now support tenhou.net only.
 
 **IT IS JUST A DEMO TO SHOW THE CONCEPTS, TRANSLATED COMMANDS AND STATES ARE NEITHER COMPLETE NOR CORRECT YET!**
@@ -85,6 +89,8 @@ Now support tenhou.net only.
 Type your tenhou.net log url (like`http://tenhou.net/0/?log=2019012600gm-0089-0000-100908f0&tw=0`).
 
 For APIs, see [code here](https://github.com/Ledenel/auto-white-reimu/blob/master/mahjong/universe_paifu_convert.py). 
+
+
 
 ### Extending universal paifu format
 
