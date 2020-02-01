@@ -15,10 +15,9 @@ class CommandTranslator:
         self.defaults: List[EventTransform]
         self.interpreter = GameInterpreter()
 
-    @staticmethod
-    def fallback_call(event, matchers: List[EventTransform]) -> List[GameCommand]:
+    def fallback_call(self, event, matchers: List[EventTransform]) -> List[GameCommand]:
         for matcher in matchers:
-            value = list(matcher(event))
+            value = list(matcher(event, self.interpreter.state))
             if value:
                 return value
 
@@ -44,7 +43,7 @@ class CommandTranslator:
         return_value = self.translate(event)
         if return_value:
             return self.postprocess(event, return_value)
-        return_value = CommandTranslator.fallback_call(event, self.defaults)
+        return_value = self.fallback_call(event, self.defaults)
         if return_value:
             return self.postprocess(event, return_value)
         else:

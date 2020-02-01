@@ -38,7 +38,7 @@ def discard_tile_tenhou(event):
 
 
 @tenhou_command.default_event
-def draw_command(event: TenhouEvent):
+def draw_command(event: TenhouEvent, ctx):
     draw = draw_tile_tenhou(event)
     if draw:
         yield GameCommand(
@@ -50,7 +50,7 @@ def draw_command(event: TenhouEvent):
 
 
 @tenhou_command.default_event
-def discard_command(event: TenhouEvent):
+def discard_command(event: TenhouEvent, ctx):
     discard = discard_tile_tenhou(event)
     cmd = Builder(GameCommand)
     if discard:
@@ -63,7 +63,7 @@ def discard_command(event: TenhouEvent):
 
 
 @tenhou_command.match_name("INIT")
-def game_init_command(event: TenhouEvent):
+def game_init_command(event: TenhouEvent, ctx):
     _not_fully_support(event)
     game_context: TenhouGame = event.context_
     cmd = Builder(GameCommand)
@@ -94,7 +94,7 @@ def _not_fully_support(event):
 
 
 @tenhou_command.match_name("N")
-def open_hand(event: TenhouEvent):
+def open_hand(event: TenhouEvent, ctx):
     meld = meld_from(event)
     cmd = Builder(GameCommand)
     with cmd.when(sub_scope=int(event.attrib["who"])):
@@ -110,7 +110,7 @@ def open_hand(event: TenhouEvent):
 
 
 @tenhou_command.match_name("GO")
-def game_type_command(event: TenhouEvent):
+def game_type_command(event: TenhouEvent, ctx):
     cmd = Builder(GameCommand)
     game_type = GameType(event.attrib["type"])
     with cmd.when(update=Update.REPLACE):
@@ -126,12 +126,12 @@ def game_type_command(event: TenhouEvent):
 
 
 @tenhou_command.match_name("TAIKYOKU")
-def set_oya_command(event: TenhouEvent):
+def set_oya_command(event: TenhouEvent, ctx):
     yield GameCommand(prop=GameView.oya, value=int(event.attrib['oya']), update=Update.REPLACE)
 
 
 @tenhou_command.match_name("UN")
-def set_player_command(event: TenhouEvent):
+def set_player_command(event: TenhouEvent, ctx):
     dan = number_list(event.attrib['dan'])
     rate = number_list(event.attrib['rate'])
     sex = event.attrib['sx'].split(",")
@@ -154,7 +154,7 @@ def set_player_command(event: TenhouEvent):
 
 
 @tenhou_command.match_name("DORA")
-def dora_command(event: TenhouEvent):
+def dora_command(event: TenhouEvent, ctx):
     yield GameCommand(
         prop=GameView.dora_indicators,
         update=Update.ADD,
@@ -163,7 +163,7 @@ def dora_command(event: TenhouEvent):
 
 
 @tenhou_command.match_name("REACH")
-def richii_command(event: TenhouEvent):
+def richii_command(event: TenhouEvent, ctx):
     player_id = int(event.attrib["who"])
     cmd = Builder(GameCommand)
     with cmd.when(sub_scope=player_id):
@@ -174,7 +174,7 @@ def richii_command(event: TenhouEvent):
 
 
 @tenhou_command.match_name("AGARI")
-def agari_command(event: TenhouEvent):
+def agari_command(event: TenhouEvent, ctx):
     game: TenhouGame = event.context_
     _not_fully_support(event)
     player_id = int(event.attrib["who"])
@@ -196,9 +196,8 @@ def agari_command(event: TenhouEvent):
                 yield cmd(prop=PlayerView.score, value=sc_delta_list[p_id] * 100)
 
 
-
 @tenhou_command.match_name("SHUFFLE")
-def shuffle_command(event: TenhouEvent):
+def shuffle_command(event: TenhouEvent, ctx):
     yield GameCommand(
         prop=RecordView.seed,
         value=event.attrib["seed"],

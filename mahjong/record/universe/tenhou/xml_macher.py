@@ -54,7 +54,7 @@ class TenhouCommandTranslator(CommandTranslator):
         for attr in event.attrib:
             both_key = (name, attr)
             if both_key in self.both_match:
-                return_value = CommandTranslator.fallback_call(
+                return_value = self.fallback_call(
                     event,
                     self.both_match[both_key]
                 )
@@ -62,7 +62,7 @@ class TenhouCommandTranslator(CommandTranslator):
                     return return_value
 
         if name in self.name_match:
-            return_value = CommandTranslator.fallback_call(
+            return_value = self.fallback_call(
                 event,
                 self.name_match[name]
             )
@@ -71,7 +71,7 @@ class TenhouCommandTranslator(CommandTranslator):
 
         for attr in event.attrib:
             if attr in self.attr_match:
-                return_value = CommandTranslator.fallback_call(
+                return_value = self.fallback_call(
                     event,
                     self.attr_match[attr]
                 )
