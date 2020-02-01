@@ -186,7 +186,6 @@ def richii_command(event: TenhouEvent, ctx):
 
 @tenhou_command.match_name("AGARI")
 def agari_command(event: TenhouEvent, ctx):
-    game: TenhouGame = event.context_
     _not_fully_support(event)
     player_id = int(event.attrib["who"])
     from_player_id = int(event.attrib["fromWho"])
@@ -200,7 +199,7 @@ def agari_command(event: TenhouEvent, ctx):
             expected_hand.remove(tile_str_list(event.attrib["machi"])[0])
         yield cmd(prop=PlayerView.hand, value=expected_hand)
     with cmd.when(update=Update.ADD):
-        for p_id in range(len(game.players)):
+        for p_id in range(ctx[(None, RecordView.player_count)]):
             with cmd.when(sub_scope=p_id):
                 with cmd.when(update=Update.ASSERT_EQUAL_OR_SET):
                     yield cmd(prop=PlayerView.score, value=sc_score_list[p_id] * 100)
