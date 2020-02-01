@@ -3,6 +3,7 @@ from mahjong.record.universe.tenhou.xml_macher import tenhou_command
 
 
 def to_command_iter(record, strict):
+    tenhou_command.clear()
     for event in record.events:
         yield from tenhou_command(event, strict)
 

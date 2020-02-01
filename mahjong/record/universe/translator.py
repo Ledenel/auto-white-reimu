@@ -38,6 +38,9 @@ class CommandTranslator:
     def translate(self, event: EventT) -> List[GameCommand]:
         pass
 
+    def clear(self):
+        self.interpreter.state = {}
+
     def __call__(self, event: EventT, strict=False) -> List[GameCommand]:
         event = self.preprocess(event)
         return_value = self.translate(event)
