@@ -8,5 +8,13 @@ def to_command_iter(record, strict):
         yield from tenhou_command(event, strict)
 
 
+def to_command_records(record, raw=False, strict=False):
+    for cmd in to_command_iter(record, strict):
+        if raw:
+            yield cmd.to_raw_record()
+        else:
+            yield cmd.to_record()
+
+
 def to_commands(record, strict=False):
     return list(to_command_iter(record, strict))

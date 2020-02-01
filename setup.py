@@ -21,6 +21,7 @@ setup(
         "console_scripts": [
             "tenhou-check = mahjong.tenhou_record_check:main",
             "mahjong-win-rate = mahjong.win_rate_demo:main",
+            "paifu-extract = mahjong.universe_paifu_convert:main",
         ]
     },
 )
