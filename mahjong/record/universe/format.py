@@ -111,11 +111,16 @@ class GameView(View, Flag):
     sub_round = auto()
     dora_indicators = auto()
     richii_remain_scores = auto()
-    oya = auto()
+    dealer = auto()
+    nobody_win = auto()
+    extra_reason = auto()
 
-    type__index = wind | round | sub_round | oya
+    type__index = wind | round | sub_round | dealer
     type__score = richii_remain_scores
     type__tiles = dora_indicators
+
+    type__bool = nobody_win
+    type__str = extra_reason
 
 
 class PlayerView(View, Flag):
@@ -133,13 +138,19 @@ class PlayerView(View, Flag):
     round = auto()
     disconnected = auto()
 
+    is_dealer = auto()
+    is_win = auto()
+    is_self_win = auto()
+    is_discard_lose_game = auto()
+    faans = auto()
+
     type__str = name | level | extra_level
     type__index = round
-    type__bool = in_richii | disconnected
+    type__bool = is_dealer | is_win | is_self_win | is_discard_lose_game | in_richii | disconnected
     type__score = score
     type__tiles = hand | discard_tiles | meld_public_tiles | bonus_tiles
     type__melds = fixed_meld
-    type__list = discard_from_hand
+    type__list = discard_from_hand | faans
 
 # public_tiles =
 # GameView.dora_indicators |

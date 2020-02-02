@@ -1,3 +1,4 @@
+import math
 from typing import Union, Iterable
 
 from loguru import logger
@@ -10,6 +11,7 @@ from mahjong.record.universe.format import PlayerView, Update, GameView, RecordV
 from mahjong.record.universe.tenhou.xml_macher import tenhou_command
 from mahjong.record.universe.translator import default_event_type
 from mahjong.record.utils.builder import Builder
+from mahjong.record.utils.constant import SCORE_PATTERN
 from mahjong.record.utils.event import *
 from mahjong.record.utils.value.gametype import GameType, if_value
 from mahjong.record.utils.value.meld import Kita
@@ -87,7 +89,8 @@ def game_init_command(event: TenhouEvent, ctx):
         yield cmd(prop=GameView.round, value=game_index)
         yield cmd(prop=GameView.sub_round, value=sub_game)
         yield cmd(prop=GameView.richii_remain_scores, value=richii_counts * 1000)
-        yield cmd(prop=GameView.oya, value=int(event.attrib["oya"]))
+        oya_index = int(event.attrib["oya"])
+        yield from set_oya_command_yield(cmd, ctx, oya_index)
         yield cmd(prop=GameView.dora_indicators, value=tile_str_list([initial_dora]), event=EventType.new_dora)
         for player_id in range(ctx[("all", RecordView.player_count)]):
             score_all = number_list(event.attrib['ten'])
@@ -103,6 +106,12 @@ def game_init_command(event: TenhouEvent, ctx):
                 yield from hand_update(cmd, hand_raw, ctx)
                 with cmd.when(update=Update.ASSERT_EQUAL_OR_SET):
                     yield cmd(prop=PlayerView.score, value=score_all[player_id] * 100)
+
+
+def set_oya_command_yield(cmd, ctx, oya_index):
+    with cmd.when(update=Update.REPLACE):
+        for p_id in range(ctx[("all", RecordView.player_count)]):
+            yield cmd(prop=PlayerView.is_dealer, sub_scope=p_id, value=oya_index == p_id)
 
 
 def hand_update(cmd: Builder, hand_raw, ctx):
@@ -170,7 +179,7 @@ def game_type_command(event: TenhouEvent, ctx):
 @tenhou_command.match_name("TAIKYOKU")
 @default_event_type(EventType.game_init)
 def set_oya_command(event: TenhouEvent, ctx):
-    yield GameCommand(prop=GameView.oya, value=int(event.attrib['oya']), update=Update.REPLACE)
+    yield from set_oya_command_yield(Builder(GameCommand), ctx, int(event.attrib['oya']))
 
 
 @tenhou_command.match_name("UN")
@@ -236,20 +245,36 @@ def agari_command(event: TenhouEvent, ctx):
     player_id = int(event.attrib["who"])
     from_player_id = int(event.attrib["fromWho"])
     sc_list = number_list(event.attrib["sc"])
-    sc_score_list = sc_list[::2]
-    sc_delta_list = sc_list[1::2]
     cmd = Builder(GameCommand)
     with cmd.when(update=Update.ASSERT_EQUAL_OR_SET, sub_scope=player_id):
         expected_hand = tile_str_list(event.attrib["hai"])
         if player_id != from_player_id:
             expected_hand.remove(tile_str_list(event.attrib["machi"])[0])
         yield cmd(prop=PlayerView.hand, value=expected_hand)
-    with cmd.when(update=Update.ADD):
-        for p_id in range(ctx[("all", RecordView.player_count)]):
-            with cmd.when(sub_scope=p_id):
-                with cmd.when(update=Update.ASSERT_EQUAL_OR_SET):
-                    yield cmd(prop=PlayerView.score, value=sc_score_list[p_id] * 100)
-                yield cmd(prop=PlayerView.score, value=sc_delta_list[p_id] * 100)
+    with cmd.when(update=Update.REPLACE):
+        yield cmd(prop=GameView.nobody_win, value=False)
+    attr = event.attrib
+    yaku = list(map(lambda t: SCORE_PATTERN[t], number_list(attr.get("yaku", attr.get("yakuman")))))
+    yield from game_finish(cmd, ctx, from_player_id, player_id, sc_list, yaku)
+
+
+def game_finish(cmd, ctx, from_player_id, player_id, sc_list, yaku):
+    for p_id in range(ctx[("all", RecordView.player_count)]):
+        with cmd.when(sub_scope=p_id):
+            if sc_list is not None:
+                sc_score_list = sc_list[::2]
+                sc_delta_list = sc_list[1::2]
+                with cmd.when(update=Update.ADD):
+                    with cmd.when(update=Update.ASSERT_EQUAL_OR_SET):
+                        yield cmd(prop=PlayerView.score, value=sc_score_list[p_id] * 100)
+                    yield cmd(prop=PlayerView.score, value=sc_delta_list[p_id] * 100)
+            with cmd.when(update=Update.REPLACE):
+                yield cmd(prop=PlayerView.is_win, value=player_id == p_id)
+                self_win = player_id == from_player_id
+                yield cmd(prop=PlayerView.is_self_win, value=self_win)
+                yield cmd(prop=PlayerView.is_discard_lose_game,
+                          value=not self_win and p_id == from_player_id)
+                yield cmd(prop=PlayerView.faans, value=yaku)
 
 
 @tenhou_command.match_name("SHUFFLE")
@@ -271,3 +296,16 @@ def disconnected_command(event: TenhouEvent, ctx):
         sub_scope=int(event.attrib["who"]),
         value=True,
     )
+
+
+@tenhou_command.match_name("RYUUKYOKU")
+@default_event_type(EventType.game_finish)
+def no_win_command(event: TenhouEvent, ctx):
+    cmd = Builder(GameCommand)
+    with cmd.when(update=Update.REPLACE):
+        yield cmd(prop=GameView.nobody_win, value=True)
+        yield cmd(prop=GameView.extra_reason,
+                  value=DRAWN_TYPES[event.attrib["type"]] if "type" in event.attrib else "EXHAUSTED")
+
+    sc_list = number_list(event.attrib["sc"]) if "sc" in event.attrib else None
+    yield from game_finish(cmd, ctx, math.nan, math.nan, sc_list, [])
