@@ -190,7 +190,8 @@ class EventType(Flag):
     draw = auto()
     discard = auto()
     open_hand = auto()
+    new_dora = auto()
     richii = auto()
     game_finish = auto()
-    
+
 

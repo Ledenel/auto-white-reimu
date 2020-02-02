@@ -3,10 +3,24 @@ from typing import TypeVar, Callable, Iterable, List, Mapping
 from loguru import logger
 
 from mahjong.record.universe.command import GameCommand
+from mahjong.record.universe.format import EventType
 from mahjong.record.universe.interpreter import GameInterpreter
 
 EventT = TypeVar('EventT')
 EventTransform = Callable[[EventT, Mapping], Iterable[GameCommand]]
+
+
+def default_event_type(typ: EventType):
+    def _event_type_decor(func: EventTransform):
+        def _modify_event_type(event, ctx):
+            for cmd in func(event, ctx):
+                if cmd.event is None:
+                    cmd.event = typ
+                yield cmd
+
+        return _modify_event_type
+
+    return _event_type_decor
 
 
 class CommandTranslator:

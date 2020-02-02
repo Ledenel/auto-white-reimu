@@ -6,8 +6,9 @@ from mahjong.record.category import SubCategory
 from mahjong.record.player import TenhouPlayer
 from mahjong.record.reader import TenhouGame
 from mahjong.record.universe.command import GameCommand
-from mahjong.record.universe.format import PlayerView, Update, GameView, RecordView, PlayerId
+from mahjong.record.universe.format import PlayerView, Update, GameView, RecordView, PlayerId, EventType
 from mahjong.record.universe.tenhou.xml_macher import tenhou_command
+from mahjong.record.universe.translator import default_event_type
 from mahjong.record.utils.builder import Builder
 from mahjong.record.utils.event import *
 from mahjong.record.utils.value.gametype import GameType, if_value
@@ -39,6 +40,7 @@ def discard_tile_tenhou(event):
 
 
 @tenhou_command.default_event
+@default_event_type(EventType.draw)
 def draw_command(event: TenhouEvent, ctx):
     draw = draw_tile_tenhou(event)
     if draw:
@@ -48,6 +50,7 @@ def draw_command(event: TenhouEvent, ctx):
 
 
 @tenhou_command.default_event
+@default_event_type(EventType.discard)
 def discard_command(event: TenhouEvent, ctx):
     discard = discard_tile_tenhou(event)
     cmd = Builder(GameCommand)
@@ -69,6 +72,7 @@ def discard_command(event: TenhouEvent, ctx):
 
 
 @tenhou_command.match_name("INIT")
+@default_event_type(EventType.game_init)
 def game_init_command(event: TenhouEvent, ctx):
     _not_fully_support(event)
     seed = number_list(event.attrib["seed"])
@@ -84,7 +88,7 @@ def game_init_command(event: TenhouEvent, ctx):
         yield cmd(prop=GameView.sub_round, value=sub_game)
         yield cmd(prop=GameView.richii_remain_scores, value=richii_counts * 1000)
         yield cmd(prop=GameView.oya, value=int(event.attrib["oya"]))
-        yield cmd(prop=GameView.dora_indicators, value=tile_str_list([initial_dora]))
+        yield cmd(prop=GameView.dora_indicators, value=tile_str_list([initial_dora]), event=EventType.new_dora)
         for player_id in range(ctx[(None, RecordView.player_count)]):
             score_all = number_list(event.attrib['ten'])
             with cmd.when(sub_scope=player_id):
@@ -126,6 +130,7 @@ def _not_fully_support(event):
 
 
 @tenhou_command.match_name("N")
+@default_event_type(EventType.open_hand)
 def open_hand(event: TenhouEvent, ctx):
     meld = meld_from(event)
     cmd = Builder(GameCommand)
@@ -142,6 +147,7 @@ def open_hand(event: TenhouEvent, ctx):
 
 
 @tenhou_command.match_name("GO")
+@default_event_type(EventType.record_init)
 def game_type_command(event: TenhouEvent, ctx):
     cmd = Builder(GameCommand)
     game_type = GameType(event.attrib["type"])
@@ -162,11 +168,13 @@ def game_type_command(event: TenhouEvent, ctx):
 
 
 @tenhou_command.match_name("TAIKYOKU")
+@default_event_type(EventType.game_init)
 def set_oya_command(event: TenhouEvent, ctx):
     yield GameCommand(prop=GameView.oya, value=int(event.attrib['oya']), update=Update.REPLACE)
 
 
 @tenhou_command.match_name("UN")
+@default_event_type(EventType.record_init)
 def set_player_command(event: TenhouEvent, ctx):
     dan = number_list(event.attrib['dan'])
     rate = number_list(event.attrib['rate'])
@@ -190,6 +198,7 @@ def set_player_command(event: TenhouEvent, ctx):
 
 
 @tenhou_command.match_name("DORA")
+@default_event_type(EventType.new_dora)
 def dora_command(event: TenhouEvent, ctx):
     yield GameCommand(
         prop=GameView.dora_indicators,
@@ -199,6 +208,7 @@ def dora_command(event: TenhouEvent, ctx):
 
 
 @tenhou_command.match_name("REACH")
+@default_event_type(EventType.richii)
 def richii_command(event: TenhouEvent, ctx):
     player_id = int(event.attrib["who"])
     cmd = Builder(GameCommand)
@@ -210,6 +220,7 @@ def richii_command(event: TenhouEvent, ctx):
 
 
 @tenhou_command.match_name("AGARI")
+@default_event_type(EventType.game_finish)
 def agari_command(event: TenhouEvent, ctx):
     _not_fully_support(event)
     player_id = int(event.attrib["who"])
@@ -232,6 +243,7 @@ def agari_command(event: TenhouEvent, ctx):
 
 
 @tenhou_command.match_name("SHUFFLE")
+@default_event_type(EventType.record_init)
 def shuffle_command(event: TenhouEvent, ctx):
     yield GameCommand(
         prop=RecordView.seed,
