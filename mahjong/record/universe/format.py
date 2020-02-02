@@ -182,3 +182,15 @@ def default_value_func(value):
         return value
 
     return _default
+
+
+class EventType(Flag):
+    record_init = auto()
+    game_init = auto()
+    draw = auto()
+    discard = auto()
+    open_hand = auto()
+    richii = auto()
+    game_finish = auto()
+    
+

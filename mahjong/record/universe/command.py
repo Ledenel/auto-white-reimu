@@ -5,7 +5,7 @@ import numpy
 import pandas
 
 from mahjong.record.universe.property_manager import prop_manager
-from mahjong.record.universe.format import View, Update
+from mahjong.record.universe.format import View, Update, EventType
 
 
 def is_empty(x):
@@ -33,6 +33,7 @@ class GameProperty:
 
 command_field_names = [
     "timestamp",
+    "event",
     "scope",
     "sub_scope_id",
     "property",
@@ -50,7 +51,8 @@ command_field_names_set = set(command_field_names)
 
 
 class GameCommand:
-    def __init__(self, *, prop: View, update: Update, sub_scope=None, value=None, timestamp=None, state=None):
+    def __init__(self, *, prop: View, update: Update, sub_scope=None, value=None, timestamp=None, state=None, event=None):
+        self.event = event
         self.timestamp = timestamp
         self.sub_scope_id = sub_scope
         self.value = value
@@ -98,6 +100,7 @@ class GameCommand:
     def to_raw_record(self):
         return _Game_command(
             timestamp=self.timestamp,
+            event=self.event,
             scope=self.prop.scope,
             sub_scope_id=self.sub_scope_id,
             property=self.prop.view_property,
@@ -110,6 +113,7 @@ class GameCommand:
     def from_raw_record(record: _Game_command):
         return GameCommand(
             prop=record.property,
+            event=record.event,
             update=record.update_method,
             sub_scope=norm_empty(record.sub_scope_id),
             value=norm_empty(record.value),
@@ -120,6 +124,7 @@ class GameCommand:
     def to_record(self):
         return _Game_command(
             timestamp=self.timestamp,
+            event=self.event.name if self.event is not None else None,
             scope=self.prop.scope.name,
             sub_scope_id=self.sub_scope_id,
             property=self.prop.view_property.name,
@@ -133,6 +138,7 @@ class GameCommand:
         view = View.by_name(record.scope)[record.property]
         return GameCommand(
             prop=view,
+            event=None if is_empty(record.event) else EventType[record.event],
             update=Update[record.update_method],
             sub_scope=norm_empty(record.sub_scope_id),
             value=prop_manager.from_str(record.value, prop=view),
