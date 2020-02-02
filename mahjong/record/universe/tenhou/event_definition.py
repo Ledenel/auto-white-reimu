@@ -255,11 +255,12 @@ def agari_command(event: TenhouEvent, ctx):
         yield cmd(prop=GameView.nobody_win, value=False)
     attr = event.attrib
     yaku = list(map(lambda t: SCORE_PATTERN[t], number_list(attr.get("yaku", attr.get("yakuman")))))
-    yield from game_finish(cmd, ctx, from_player_id, player_id, sc_list, yaku)
+    yield from game_finish(cmd, ctx, from_player_id, player_id, sc_list, yaku, event)
 
 
-def game_finish(cmd, ctx, from_player_id, player_id, sc_list, yaku):
-    for p_id in range(ctx[("all", RecordView.player_count)]):
+def game_finish(cmd, ctx, from_player_id, player_id, sc_list, yaku, event):
+    player_count_ = ctx[("all", RecordView.player_count)]
+    for p_id in range(player_count_):
         with cmd.when(sub_scope=p_id):
             if sc_list is not None:
                 sc_score_list = sc_list[::2]
@@ -278,6 +279,18 @@ def game_finish(cmd, ctx, from_player_id, player_id, sc_list, yaku):
                           value=discard_lose)
                 participated = self_win or discard_lose or win
                 yield cmd(prop=PlayerView.faans, value=yaku if participated else [])
+    if "owari" in event.attrib:
+        finals = number_list(event.attrib["owari"])
+        final_scores = [x * 100 for x in finals[::2]]
+        final_points = finals[1::2]
+        player_ranks = [(-score, pid) for pid, score in enumerate(final_scores[:player_count_])]
+        player_ranks.sort()
+        player_rank_map = {pid: rank+1 for rank, (_, pid) in enumerate(player_ranks)}
+        for p_id in range(player_count_):
+            with cmd.when(sub_scope=p_id, update=Update.REPLACE, event=EventType.record_finish):
+                yield cmd(prop=PlayerView.final_score, value=final_scores[p_id])
+                yield cmd(prop=PlayerView.final_point, value=final_points[p_id])
+                yield cmd(prop=PlayerView.rank, value=player_rank_map[p_id])
 
 
 @tenhou_command.match_name("SHUFFLE")
@@ -311,4 +324,4 @@ def no_win_command(event: TenhouEvent, ctx):
                   value=DRAWN_TYPES[event.attrib["type"]] if "type" in event.attrib else "EXHAUSTED")
 
     sc_list = number_list(event.attrib["sc"]) if "sc" in event.attrib else None
-    yield from game_finish(cmd, ctx, math.nan, math.nan, sc_list, [])
+    yield from game_finish(cmd, ctx, math.nan, math.nan, sc_list, [], event)

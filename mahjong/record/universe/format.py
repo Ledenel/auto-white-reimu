@@ -85,6 +85,7 @@ class ViewType(Flag):
     melds = auto()
     str = auto()
     bool = auto()
+    float = auto()
 
     int = index | score
     list = tiles | melds
@@ -144,10 +145,16 @@ class PlayerView(View, Flag):
     is_discard_lose_game = auto()
     faans = auto()
 
+    rank = auto()
+    final_score = auto()
+    final_point = auto()
+
     type__str = name | level | extra_level
     type__index = round
+    type__int = rank
+    type__float = final_point
     type__bool = is_dealer | is_win | is_self_win | is_discard_lose_game | in_richii | disconnected
-    type__score = score
+    type__score = score | final_score
     type__tiles = hand | discard_tiles | meld_public_tiles | bonus_tiles
     type__melds = fixed_meld
     type__list = discard_from_hand | faans
@@ -205,5 +212,6 @@ class EventType(Flag):
     richii = auto()
     connect_change = auto()
     game_finish = auto()
+    record_finish = auto()
 
 
