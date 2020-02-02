@@ -1,8 +1,9 @@
+import os
 import xml.etree.ElementTree as ET
 import pandas
 from typing import Iterable
 
-from mahjong.record.reader import from_file, from_url
+from mahjong.record.reader import from_file, from_url, log_id_from_url
 from mahjong.record.universe.command import GameCommand
 from mahjong.record.universe.executor import GameExecutor
 from mahjong.record.universe.tenhou import to_commands
@@ -32,19 +33,27 @@ import re
 last_num = re.compile(r"^([A-Za-z]+)([0-9]+)$")
 
 
-def _event_df_iter(events: Iterable[ET.Element]):
-    for event in events:
+def _event_df_iter(events: Iterable[ET.Element], abstract=True):
+    for i, event in enumerate(events):
         result = {}
         matched = last_num.match(event.tag)
         if matched:
-            result["<tag>"] = matched.group(1)
+            tag = matched.group(1)
             result["<tag_extra>"] = matched.group(2)
         else:
-            result["<tag>"] = event.tag
-        result.update(event.attrib)
-        yield result
+            tag = event.tag
+        if matched and abstract:
+            pass
+        else:
+            result.update(event.attrib)
+            for k, v in event.items():
+                yield {"index": i, "tag": tag, "attr": k, "value": v}
 
 
-def light_dataframe_from_file(file_path):
+def light_dataframe_from_file(file_path, abstract=True):
     root_element = next(ET.parse(file_path).iter())
-    return pandas.DataFrame(_event_df_iter(root_element))
+    log_file = os.path.split(file_path)[-1]
+    log_id, _ = os.path.splitext(log_file)
+    df = pandas.DataFrame(_event_df_iter(root_element, abstract))
+    df["log_id"] = log_id
+    return df
