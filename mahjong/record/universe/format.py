@@ -12,12 +12,14 @@ class PlayerId(Enum):
 class ViewScope(Flag):
     game = auto()
     player = auto()
+    record = auto()
 
     @staticmethod
     def scopes_with_multi_value():
         return {
             ViewScope.game: None,
             ViewScope.player: PlayerId,
+            ViewScope.record: None,
         }
 
 
@@ -25,6 +27,7 @@ class View:
     @staticmethod
     def registered_view():
         return {
+            ViewScope.record: RecordView,
             ViewScope.game: GameView,
             ViewScope.player: PlayerView,
         }
@@ -80,10 +83,27 @@ class ViewType(Flag):
     score = auto()
     tiles = auto()
     melds = auto()
-    str = auto()  # FIXME: str type is not suitable for ast.literal_eval, 'str' is needed (add more to property type manager)
+    str = auto()
+    bool = auto()
+    float = auto()
 
     int = index | score
     list = tiles | melds
+
+
+class RecordView(View, Flag):
+    player_count = auto()
+    play_level = auto()
+    has_aka_dora = auto()
+    speed_up = auto()
+    allow_tanyao_open = auto()
+    play_wind_count = auto()
+    show_discard_shadow = auto()
+    seed = auto()
+
+    type__index = player_count | play_wind_count
+    type__str = play_level | seed
+    type__bool = has_aka_dora | speed_up | allow_tanyao_open | show_discard_shadow
 
 
 class GameView(View, Flag):
@@ -92,11 +112,16 @@ class GameView(View, Flag):
     sub_round = auto()
     dora_indicators = auto()
     richii_remain_scores = auto()
-    oya = auto()
+    dealer = auto()
+    nobody_win = auto()
+    extra_reason = auto()
 
-    type__index = wind | round | sub_round | oya
+    type__index = wind | round | sub_round | dealer
     type__score = richii_remain_scores
     type__tiles = dora_indicators
+
+    type__bool = nobody_win
+    type__str = extra_reason
 
 
 class PlayerView(View, Flag):
@@ -104,17 +129,35 @@ class PlayerView(View, Flag):
     level = auto()
     extra_level = auto()
     hand = auto()
+    in_richii = auto()
     discard_tiles = auto()
+    discard_from_hand = auto()
     fixed_meld = auto()
     meld_public_tiles = auto()
     score = auto()
     bonus_tiles = auto()
+    round = auto()
+    disconnected = auto()
+
+    is_dealer = auto()
+    is_win = auto()
+    is_self_win = auto()
+    is_discard_lose_game = auto()
+    faans = auto()
+
+    rank = auto()
+    final_score = auto()
+    final_point = auto()
 
     type__str = name | level | extra_level
-    type__score = score
+    type__index = round
+    type__int = rank
+    type__float = final_point
+    type__bool = is_dealer | is_win | is_self_win | is_discard_lose_game | in_richii | disconnected
+    type__score = score | final_score
     type__tiles = hand | discard_tiles | meld_public_tiles | bonus_tiles
     type__melds = fixed_meld
-
+    type__list = discard_from_hand | faans
 
 # public_tiles =
 # GameView.dora_indicators |
@@ -133,6 +176,7 @@ class Update(Enum):
     ADD = auto()
     REMOVE = auto()
     RESET_DEFAULT = auto()
+    ASSERT_EQUAL_OR_SET = auto()
 
     def operand_num(self):
         return defaultdict(default_value_func(None), {
@@ -156,3 +200,18 @@ def default_value_func(value):
         return value
 
     return _default
+
+
+class EventType(Flag):
+    record_init = auto()
+    game_init = auto()
+    draw = auto()
+    discard = auto()
+    open_hand = auto()
+    new_dora = auto()
+    richii = auto()
+    connect_change = auto()
+    game_finish = auto()
+    record_finish = auto()
+
+

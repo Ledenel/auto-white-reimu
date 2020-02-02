@@ -1,12 +1,14 @@
 import operator
-
 from typing import Iterable
 
-from mahjong.record.universe.command import GameCommand
-from mahjong.record.universe.property_manager import prop_manager
-from mahjong.record.universe.format import *
-import mahjong.record.universe.format as mahjong_format
 import pandas as pd
+from loguru import logger
+
+import mahjong.record.universe.format as mahjong_format
+from mahjong.record.universe.command import GameCommand
+from mahjong.record.universe.format import *
+from mahjong.record.universe.interpreter import execute_new_value
+from mahjong.record.universe.property_manager import prop_manager
 
 
 def get_enums_from(module):
@@ -31,21 +33,6 @@ def replace_enum_values(value_str):
 def null():
     return None
 
-
-defaultExecutor = {
-    Update.RESET_DEFAULT: null,
-    Update.ADD: operator.add,
-    Update.REMOVE: operator.sub,
-}
-
-
-def fill_value_executor():
-    return {
-        Update.ADD: operator.add,
-        Update.REMOVE: operator.sub,
-    }
-
-
 def remove_all(lst: list, values: list):
     lst_r = lst.copy()
     for val in values:
@@ -68,37 +55,17 @@ setExecutor = {
 #     if k in self:
 #         return self
 #     self
-class CombinedCommandExecutor:
-    def __init__(self, executor_with_type):
-        self.executor_with_type = executor_with_type
-
-    def has_function(self, value, method: Update):
-        for typ, executor in self.executor_with_type:
-            if typ is None or isinstance(value, typ):
-                if method in executor:
-                    return True
-        return False
-
-    def execute_value(self, command: GameCommand, origin_value=None):
-        for typ, executor in self.executor_with_type:
-            if typ is None or isinstance(command.value, typ):
-                method = command.prop.update_method
-                if method.operand_num() == 2:
-                    return executor[method](origin_value, command.value)
-                elif method.operand_num() == 1:
-                    return executor[method](command.value)
-                elif method.operand_num() == 0:
-                    raise ValueError("Zero operand is not supported. Type of None value may be ambiguous.")
 
 
 def state_series_apply(x):
     col_last = x.name[-1]
     if hasattr(col_last, "type"):
         def from_str_view(t):
-            return prop_manager.from_str(t, col_last)
+            return prop_manager.from_str(t, prop=col_last)
 
         return x.apply(from_str_view)
     return x
+
 
 
 class GameExecutor:
@@ -109,12 +76,8 @@ class GameExecutor:
         df_states = df_states.apply(state_series_apply, axis="rows")
         return df_states
 
-    def __init__(self):
-        self.executor = CombinedCommandExecutor([
-            (list, listExecutor),
-            (set, setExecutor),
-            (None, defaultExecutor),
-        ])
+    def __init__(self, strict_mode=False):
+        self.strict_mode = strict_mode
         state_dict = {
             enum: {
                 "single": {},
@@ -152,31 +115,26 @@ class GameExecutor:
         df.columns = pd.MultiIndex.from_tuples(df.columns)
         return df
 
-    def execute_update_state(self, command, curr_state):
-        method = command.prop.update_method
+    def execute_update_state(self, command: GameCommand, curr_state):
         view = GameExecutor.state_value(curr_state, command)
+        old_value = view.get(command.prop.view_property, None)
+        new_value = execute_new_value(command, old_value)
         view_property = command.prop.view_property
-        if method == Update.REPLACE:
-            result_state = view.set(
-                view_property,
-                command.value
-            )
-        elif method == Update.CLEAR:
-            result_state = view.drop(view_property)
-        elif method == Update.ADD or method == Update.REMOVE:
-            result_state = view.set(
-                view_property,
-                self.executor.execute_value(
-                    command, view[view_property]
-                ),
-            )
-        elif method == Update.RESET_DEFAULT:
-            result_state = view.set(
-                view_property,
-                prop_manager.get_default(view_property),
-            )
-        else:
-            raise ValueError("unrecognized", method)
+        if command.prop.update_method == Update.ASSERT_EQUAL_OR_SET:
+            expected = new_value
+            if view_property in view:
+                actual = old_value
+                is_equal = prop_manager.check_equal(expected, actual, prop=view_property)
+                msg = "{} != {} when executing {cmd}".format(expected, actual, cmd=command)
+                if self.strict_mode:
+                    assert is_equal, msg
+                elif not is_equal:
+                    logger.warning(msg)
+
+        result_state = view.set(
+            view_property,
+            new_value,
+        )
         return result_state
 
 
@@ -199,13 +157,16 @@ class TransferDict:
                 yield tuple(initial), v
 
     def flatten(self):
-        return dict((k, prop_manager.to_str(v, k[-1])) for k, v in self.flatten_iter())
+        return dict((k, prop_manager.to_str(v, prop=k[-1])) for k, v in self.flatten_iter())
 
     def __getattr__(self, item):
         return getattr(self.nested_dict, item)
 
     def __getitem__(self, item):
         return self.nested_dict[item]
+
+    def __contains__(self, item):
+        return item in self.nested_dict
 
     def __str__(self):
         return str(self.nested_dict)

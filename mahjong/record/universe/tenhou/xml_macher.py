@@ -2,7 +2,8 @@ from collections import defaultdict
 
 from typing import List, Callable
 
-from mahjong.record.universe.command import GameCommand, CommandTranslator, EventTransform
+from mahjong.record.universe.command import GameCommand
+from mahjong.record.universe.translator import EventTransform, CommandTranslator
 from mahjong.record.utils.event import TenhouEvent
 
 
@@ -28,10 +29,11 @@ class TenhouCommandTranslator(CommandTranslator):
 
         return _matcher_decor
 
-    def postprocess(self, event: TenhouEvent, command: List[GameCommand]) -> List[GameCommand]:
-        for cmd in command:
+    def postprocess(self, event: TenhouEvent, commands: List[GameCommand]) -> List[GameCommand]:
+        super().postprocess(event, commands)
+        for cmd in commands:
             cmd.timestamp = event.timestamp
-        return command
+        return commands
 
     def match_attr(self, name: str) -> Callable[[EventTransform], EventTransform]:
         def _matcher_decor(func: EventTransform):
@@ -52,7 +54,7 @@ class TenhouCommandTranslator(CommandTranslator):
         for attr in event.attrib:
             both_key = (name, attr)
             if both_key in self.both_match:
-                return_value = CommandTranslator.fallback_call(
+                return_value = self.fallback_call(
                     event,
                     self.both_match[both_key]
                 )
@@ -60,7 +62,7 @@ class TenhouCommandTranslator(CommandTranslator):
                     return return_value
 
         if name in self.name_match:
-            return_value = CommandTranslator.fallback_call(
+            return_value = self.fallback_call(
                 event,
                 self.name_match[name]
             )
@@ -69,7 +71,7 @@ class TenhouCommandTranslator(CommandTranslator):
 
         for attr in event.attrib:
             if attr in self.attr_match:
-                return_value = CommandTranslator.fallback_call(
+                return_value = self.fallback_call(
                     event,
                     self.attr_match[attr]
                 )

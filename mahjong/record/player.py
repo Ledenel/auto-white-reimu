@@ -18,11 +18,16 @@ class TenhouPlayer:
         self.index = index
 
     def __str__(self):
+        level = self.level_str()
         return "%s %s R%.2f" % (
             self.name,
-            RANKS[self.level],
+            level,
             self.rate
         )
+
+    def level_str(self):
+        level_str = RANKS[self.level]
+        return level_str
 
     def clear(self):
         pass

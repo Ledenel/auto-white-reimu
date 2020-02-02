@@ -129,7 +129,7 @@ def xml_message_config_scan(namespace: Namespace, message):
 
 
 def list_of_xml_configs(xml_element_list):
-    return reduce(xml_message_config_scan, xml_element_list, Namespace())
+    return reduce(xml_message_config_scan, reversed(xml_element_list), Namespace())
 
 
 class TenhouRecord:

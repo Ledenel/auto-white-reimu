@@ -78,12 +78,40 @@ with open(filename, "w", encoding='utf-8') as f:
 
 This converter extract paifus as a universal format, to csv files for easy analysis.
 
+**After installation**, you can run the tools with
+
+`paifu-extract`
+
 Now support tenhou.net only.
 
 **IT IS JUST A DEMO TO SHOW THE CONCEPTS, TRANSLATED COMMANDS AND STATES ARE NEITHER COMPLETE NOR CORRECT YET!**
 
 Type your tenhou.net log url (like`http://tenhou.net/0/?log=2019012600gm-0089-0000-100908f0&tw=0`).
-## Testing
+
+For APIs, see [code here](https://github.com/Ledenel/auto-white-reimu/blob/master/mahjong/universe_paifu_convert.py). 
+
+Extra APIs are provided to analyse the csv with usage examples below:
+```python
+import pandas as pd
+from mahjong.record.universe.command import GameCommand
+df = pd.read_csv("command_list.csv")
+# clean up df, make states as python value
+df = df.apply(GameCommand.pandas_columns_clean, axis="columns")
+# extract all state changes
+column_props = ["sub_scope_id", "property"]
+df_state = df[column_props + ["state"]]
+# pivot combined column to multi-level state.
+df_state = df_state.set_index(column_props, append=True)
+df_state = df_state.unstack(level=column_props)
+# fill in all state to get exact state after each command executed.
+df_state = df_state.ffill()
+```
+
+### Extending universal paifu format
+
+See pull request [here](https://github.com/Ledenel/auto-white-reimu/pull/45) for more details.
+
+# Testing
 
 you could run test by executing `pip install .[test]` at root dir, this would install all dependence for you.
 

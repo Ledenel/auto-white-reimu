@@ -1,5 +1,5 @@
 import logging
-from enum import Enum, auto, Flag
+import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element
 
 from mahjong.record.utils.bit import unpack_with
@@ -100,13 +100,18 @@ class TenhouEvent:
         return getattr(self._wrapped_xml_event, name)
 
     def __repr__(self):
-        return "<%s>" % self
+        return "[%s]:%s" % self, self._wrapped_xml_event
 
     @property
     def meta_attribute(self):
         return self._wrapped_xml_event.attrib
 
     def __str__(self):
+        return "{}:{}".format(
+            self.base_str(), ET.tostring(self._wrapped_xml_event).decode("utf-8")
+        )
+
+    def base_str(self):
         event = self._wrapped_xml_event
         attrs = event.attrib
         draw = draw_tile_change(event)
@@ -139,8 +144,7 @@ class TenhouEvent:
                 reason=DRAWN_TYPES[attrs['type']]
                 if 'type' in attrs else '',
             )
-
-        return "UNPARSED {tag}: {attr_expr}".format(
+        return "UNPARSED".format(
             tag=event.tag,
             attr_expr=",".join("{}={}".format(k, v) for k, v in attrs.items()),
         )

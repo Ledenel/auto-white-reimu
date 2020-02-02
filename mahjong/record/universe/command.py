@@ -1,13 +1,11 @@
 import ast
 from collections import namedtuple
-from typing import List, TypeVar, Callable, Iterable
 
 import numpy
 import pandas
-from loguru import logger
 
 from mahjong.record.universe.property_manager import prop_manager
-from mahjong.record.universe.format import View, Update
+from mahjong.record.universe.format import View, Update, EventType
 
 
 def is_empty(x):
@@ -35,11 +33,13 @@ class GameProperty:
 
 command_field_names = [
     "timestamp",
+    "event",
     "scope",
     "sub_scope_id",
     "property",
     "update_method",
     "value",
+    "state"
 ]
 
 _Game_command = namedtuple(
@@ -49,30 +49,24 @@ _Game_command = namedtuple(
 
 command_field_names_set = set(command_field_names)
 
+def try_int(x):
+    if isinstance(x, str) and x.isdigit():
+        return int(x)
+    return x
 
 class GameCommand:
-    def __init__(self, *, prop: View, update: Update, sub_scope=None, value=None, timestamp=None):
+    def __init__(self, *, prop: View, update: Update, sub_scope="all", value=None, timestamp=None, state=None, event=None):
+        self.event = event
         self.timestamp = timestamp
-        # if value is None and prop.default_ctor is not None and prop.update_method != Update.CLEAR:
-        #     self.value = prop.default_ctor()
-        # else:
         self.sub_scope_id = sub_scope
         self.value = value
         self.property = prop
         self.update_method = update
+        self.state = state
         self.prop = GameProperty(self.property, self.update_method)
 
-    # @staticmethod
-    # def multi_command(props: Iterable[GameProperty], sub_scope_id=None, value=None, timestamp=None):
-    #     return [GameCommand(
-    #         prop,
-    #         sub_scope_id=sub_scope_id,
-    #         value=value,
-    #         timestamp=timestamp
-    #     ) for prop in props]
-
     def __str__(self):
-        return str(self.to_record())
+        return str(self.to_raw_record())
 
     def __repr__(self):
         return "{%s}" % str(self)
@@ -82,55 +76,65 @@ class GameCommand:
         return pandas_dataframe.apply(GameCommand.pandas_columns_clean, axis="columns")
 
     @staticmethod
-    def to_dataframe(command_list):
-        return pandas.DataFrame(
-            (x.to_record() for x in command_list),
-        )
+    def to_dataframe(command_list, raw=False):
+        if raw:
+            return pandas.DataFrame(
+                (x.to_raw_record() for x in command_list),
+            )
+        else:
+            return pandas.DataFrame(
+                (x.to_record() for x in command_list),
+            )
 
     @staticmethod
     def read_clean_csv(csv_path):
         return GameCommand.clean(pandas.read_csv(csv_path))
 
     @staticmethod
-    def pandas_columns_clean(row):
+    def pandas_columns_clean(row_origin):
         # remove index
-        row = row[command_field_names]
-        series_ctor = type(row)
+        row = row_origin[command_field_names]
         record = _Game_command(**row)
         command = GameCommand.from_record(record)
-        target = numpy.array(command.to_raw_record(), dtype=object)
-        target_series = series_ctor(target)
-        target_series.index = command_field_names
-        return target_series
+        row_return = row_origin.copy()
+        for name, value in command.to_raw_record()._asdict().items():
+            row_return[name] = value
+        return row_return
 
     def to_raw_record(self):
         return _Game_command(
             timestamp=self.timestamp,
+            event=self.event,
             scope=self.prop.scope,
             sub_scope_id=self.sub_scope_id,
             property=self.prop.view_property,
             update_method=self.prop.update_method,
             value=self.value,
+            state=self.state,
         )
 
     @staticmethod
     def from_raw_record(record: _Game_command):
         return GameCommand(
             prop=record.property,
+            event=record.event,
             update=record.update_method,
-            sub_scope=norm_empty(record.sub_scope_id),
+            sub_scope=try_int(record.sub_scope_id),
             value=norm_empty(record.value),
             timestamp=norm_empty(record.timestamp),
+            state=norm_empty(record.state),
         )
 
     def to_record(self):
         return _Game_command(
             timestamp=self.timestamp,
+            event=self.event.name if self.event is not None else None,
             scope=self.prop.scope.name,
             sub_scope_id=self.sub_scope_id,
             property=self.prop.view_property.name,
             update_method=self.prop.update_method.name,
-            value=prop_manager.to_str(self.value, self.prop.view_property),
+            value=prop_manager.to_str(self.value, prop=self.prop.view_property),
+            state=prop_manager.to_str(self.state, prop=self.prop.view_property),
         )
 
     @staticmethod
@@ -138,52 +142,10 @@ class GameCommand:
         view = View.by_name(record.scope)[record.property]
         return GameCommand(
             prop=view,
+            event=None if is_empty(record.event) else EventType[record.event],
             update=Update[record.update_method],
-            sub_scope=norm_empty(record.sub_scope_id),
-            value=prop_manager.from_str(record.value, view=view),
+            sub_scope=try_int(record.sub_scope_id),
+            value=prop_manager.from_str(record.value, prop=view),
             timestamp=norm_empty(record.timestamp),
+            state=prop_manager.from_str(record.state, prop=view),
         )
-
-
-EventT = TypeVar('EventT')
-EventTransform = Callable[[EventT], Iterable[GameCommand]]
-
-
-class CommandTranslator:
-    def __init__(self):
-        self.defaults = []
-        self.defaults: List[EventTransform]
-
-    @staticmethod
-    def fallback_call(event, matchers: List[EventTransform]) -> List[GameCommand]:
-        for matcher in matchers:
-            value = list(matcher(event))
-            if value:
-                return value
-
-    # TODO: add preprocess and postprocess for event and command list. (to support timestamp attaching in tenhou).
-
-    def default_event(self, func: EventTransform) -> EventTransform:
-        self.defaults.append(func)
-        return func
-
-    def preprocess(self, event: EventT) -> EventT:
-        return event
-
-    def postprocess(self, event: EventT, command: List[GameCommand]) -> List[GameCommand]:
-        return command
-
-    def translate(self, event: EventT) -> List[GameCommand]:
-        pass
-
-    def __call__(self, event: EventT) -> List[GameCommand]:
-        event = self.preprocess(event)
-        return_value = self.translate(event)
-        if return_value:
-            return self.postprocess(event, return_value)
-        return_value = CommandTranslator.fallback_call(event, self.defaults)
-        if return_value:
-            return self.postprocess(event, return_value)
-        else:
-            logger.warning("event <{}> is not transformed to game commands.", event)
-            return []

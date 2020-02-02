@@ -20,7 +20,7 @@ GameTypeData = named_tuple_from_desc("game_type", game_type_desc)
 game_type_packer = bit_struct_from_desc(game_type_desc)
 
 
-def _if_value(condition, value_if_true, value_if_false=""):
+def if_value(condition, value_if_true, value_if_false=""):
     return value_if_true if condition else value_if_false
 
 
@@ -74,13 +74,13 @@ class GameType:
     def __str__(self) -> str:
         return "%s%s%s%s%s%s%s%s" % (
             "零一二三四"[self.player_count()],
-            _if_value(self.with_tips(), "若銀琥孔", "般上特鳳")[self.play_level()],
+            if_value(self.with_tips(), "若銀琥孔", "般上特鳳")[self.play_level()],
             "_東南西北"[self.play_wind_count()],
-            _if_value(self.allow_tanyao_open(), "喰"),
-            _if_value(self.has_aka_dora(), "赤"),
-            _if_value(self.speed_up(), "速"),
-            _if_value(self.show_discard_shadow(), "暗"),
-            _if_value(self.with_tips(), "祝%d" % (self.tips_count())),
+            if_value(self.allow_tanyao_open(), "喰"),
+            if_value(self.has_aka_dora(), "赤"),
+            if_value(self.speed_up(), "速"),
+            if_value(self.show_discard_shadow(), "暗"),
+            if_value(self.with_tips(), "祝%d" % (self.tips_count())),
         )
 
     def __repr__(self):
