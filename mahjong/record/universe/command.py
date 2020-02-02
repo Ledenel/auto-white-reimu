@@ -49,9 +49,13 @@ _Game_command = namedtuple(
 
 command_field_names_set = set(command_field_names)
 
+def try_int(x):
+    if isinstance(x, str) and x.isdigit():
+        return int(x)
+    return x
 
 class GameCommand:
-    def __init__(self, *, prop: View, update: Update, sub_scope=None, value=None, timestamp=None, state=None, event=None):
+    def __init__(self, *, prop: View, update: Update, sub_scope="all", value=None, timestamp=None, state=None, event=None):
         self.event = event
         self.timestamp = timestamp
         self.sub_scope_id = sub_scope
@@ -115,7 +119,7 @@ class GameCommand:
             prop=record.property,
             event=record.event,
             update=record.update_method,
-            sub_scope=norm_empty(record.sub_scope_id),
+            sub_scope=try_int(record.sub_scope_id),
             value=norm_empty(record.value),
             timestamp=norm_empty(record.timestamp),
             state=norm_empty(record.state),
@@ -140,7 +144,7 @@ class GameCommand:
             prop=view,
             event=None if is_empty(record.event) else EventType[record.event],
             update=Update[record.update_method],
-            sub_scope=norm_empty(record.sub_scope_id),
+            sub_scope=try_int(record.sub_scope_id),
             value=prop_manager.from_str(record.value, prop=view),
             timestamp=norm_empty(record.timestamp),
             state=prop_manager.from_str(record.state, prop=view),

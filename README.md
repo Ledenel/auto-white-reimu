@@ -97,9 +97,13 @@ from mahjong.record.universe.command import GameCommand
 df = pd.read_csv("command_list.csv")
 # clean up df, make states as python value
 df = df.apply(GameCommand.pandas_columns_clean, axis="columns")
-# extract all state changes to columns
-df_state = df.pivot(columns="property", values="state")
-# fill in all state to get exact state for each command executed.
+# extract all state changes
+column_props = ["sub_scope_id", "property"]
+df_state = df[column_props + ["state"]]
+# pivot combined column to multi-level state.
+df_state = df_state.set_index(column_props, append=True)
+df_state = df_state.unstack(level=column_props)
+# fill in all state to get exact state after each command executed.
 df_state = df_state.ffill()
 ```
 

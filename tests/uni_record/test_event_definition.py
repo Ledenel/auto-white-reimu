@@ -78,6 +78,10 @@ def test_command_state_expand(command_list):
     # clean up df
     df = df.apply(GameCommand.pandas_columns_clean, axis="columns")
     # extract all states to columns
-    df_state = df.pivot(columns="property", values="state")
+
+    column_props = ["sub_scope_id", "property"]
+    df_state = df[column_props + ["state"]]
+    df_state = df_state.set_index(column_props, append=True)
+    df_state = df_state.unstack(level=column_props)
     df_state = df_state.ffill()
     df_state.to_csv("state_fill.csv")

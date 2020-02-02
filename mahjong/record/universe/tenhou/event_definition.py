@@ -89,7 +89,7 @@ def game_init_command(event: TenhouEvent, ctx):
         yield cmd(prop=GameView.richii_remain_scores, value=richii_counts * 1000)
         yield cmd(prop=GameView.oya, value=int(event.attrib["oya"]))
         yield cmd(prop=GameView.dora_indicators, value=tile_str_list([initial_dora]), event=EventType.new_dora)
-        for player_id in range(ctx[(None, RecordView.player_count)]):
+        for player_id in range(ctx[("all", RecordView.player_count)]):
             score_all = number_list(event.attrib['ten'])
             with cmd.when(sub_scope=player_id):
                 with cmd.when(update=Update.RESET_DEFAULT):
@@ -235,7 +235,7 @@ def agari_command(event: TenhouEvent, ctx):
             expected_hand.remove(tile_str_list(event.attrib["machi"])[0])
         yield cmd(prop=PlayerView.hand, value=expected_hand)
     with cmd.when(update=Update.ADD):
-        for p_id in range(ctx[(None, RecordView.player_count)]):
+        for p_id in range(ctx[("all", RecordView.player_count)]):
             with cmd.when(sub_scope=p_id):
                 with cmd.when(update=Update.ASSERT_EQUAL_OR_SET):
                     yield cmd(prop=PlayerView.score, value=sc_score_list[p_id] * 100)
