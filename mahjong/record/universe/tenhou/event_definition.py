@@ -269,12 +269,15 @@ def game_finish(cmd, ctx, from_player_id, player_id, sc_list, yaku):
                         yield cmd(prop=PlayerView.score, value=sc_score_list[p_id] * 100)
                     yield cmd(prop=PlayerView.score, value=sc_delta_list[p_id] * 100)
             with cmd.when(update=Update.REPLACE):
-                yield cmd(prop=PlayerView.is_win, value=player_id == p_id)
+                win = player_id == p_id
+                yield cmd(prop=PlayerView.is_win, value=win)
                 self_win = player_id == from_player_id
                 yield cmd(prop=PlayerView.is_self_win, value=self_win)
+                discard_lose = not self_win and p_id == from_player_id
                 yield cmd(prop=PlayerView.is_discard_lose_game,
-                          value=not self_win and p_id == from_player_id)
-                yield cmd(prop=PlayerView.faans, value=yaku)
+                          value=discard_lose)
+                participated = self_win or discard_lose or win
+                yield cmd(prop=PlayerView.faans, value=yaku if participated else [])
 
 
 @tenhou_command.match_name("SHUFFLE")
