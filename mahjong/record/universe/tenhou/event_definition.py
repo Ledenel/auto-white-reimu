@@ -176,9 +176,9 @@ def set_oya_command(event: TenhouEvent, ctx):
 @tenhou_command.match_name("UN")
 @default_event_type(EventType.record_init)
 def set_player_command(event: TenhouEvent, ctx):
-    dan = number_list(event.attrib['dan'])
-    rate = number_list(event.attrib['rate'])
-    sex = event.attrib['sx'].split(",")
+    dan = number_list(get_list_attr("dan", event))
+    rate = number_list(get_list_attr("rate", event))
+    sex = get_list_attr("sx", event).split(",")
     cmd = Builder(GameCommand)
     for i in PlayerId:
         player_id = i.value
@@ -192,9 +192,19 @@ def set_player_command(event: TenhouEvent, ctx):
                 sex[player_id]
             )
             with cmd.when(sub_scope=player_id, update=Update.REPLACE):
-                yield cmd(prop=PlayerView.name, value=player.name)
-                yield cmd(prop=PlayerView.level, value=player.level_str())
-                yield cmd(prop=PlayerView.extra_level, value=player.rate)
+                yield cmd(prop=PlayerView.disconnected, value=False, event=EventType.connect_change)
+                yield cmd(prop=PlayerView.name, value=player.name, update=Update.ASSERT_EQUAL_OR_SET)
+                if "dan" in event.attrib:
+                    yield cmd(prop=PlayerView.level, value=player.level_str())
+                if "rate" in event.attrib:
+                    yield cmd(prop=PlayerView.extra_level, value=player.rate)
+
+
+def get_list_attr(attr_name, event):
+    if attr_name in event.attrib:
+        return event.attrib[attr_name]
+    else:
+        return ",".join(["-127"] * 4)
 
 
 @tenhou_command.match_name("DORA")
@@ -249,4 +259,15 @@ def shuffle_command(event: TenhouEvent, ctx):
         prop=RecordView.seed,
         value=event.attrib["seed"],
         update=Update.REPLACE,
+    )
+
+
+@tenhou_command.match_name("BYE")
+@default_event_type(EventType.connect_change)
+def disconnected_command(event: TenhouEvent, ctx):
+    yield GameCommand(
+        prop=PlayerView.disconnected,
+        update=Update.REPLACE,
+        sub_scope=int(event.attrib["who"]),
+        value=True,
     )

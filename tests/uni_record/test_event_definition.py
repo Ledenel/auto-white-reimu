@@ -16,6 +16,13 @@ def to_commands_iter(files):
             yield commands
 
 
+def file_to_commands(file):
+    with open(file, "r") as f:
+        record = from_file(f)
+        commands = to_commands(record)
+        return commands
+
+
 @pytest.mark.parametrize("file_name", test_files)
 def test_command_convert(file_name):
     with open(file_name, "r") as f:
@@ -34,8 +41,9 @@ def test_game_command_convert():
     assert GameCommand.from_record(record).to_record() == record
 
 
-@pytest.mark.parametrize("command_list", to_commands_iter(test_files), ids=test_files)
-def test_command_serialize(command_list):
+@pytest.mark.parametrize("file_name", test_files)
+def test_command_serialize(file_name):
+    command_list = file_to_commands(file_name)
     df = pandas.DataFrame(
         (x.to_record() for x in command_list),
     )
@@ -49,8 +57,9 @@ def test_command_serialize(command_list):
         assert a.to_record() == b.to_record()
 
 
-@pytest.mark.parametrize("command_list", to_commands_iter(test_files), ids=test_files)
-def test_command_clean(command_list):
+@pytest.mark.parametrize("file_name", test_files)
+def test_command_clean(file_name):
+    command_list = file_to_commands(file_name)
     df = pandas.DataFrame(
         (x.to_record() for x in command_list),
     )
@@ -65,8 +74,9 @@ def test_command_clean(command_list):
         assert a.to_record() == b.to_record()
 
 
-@pytest.mark.parametrize("command_list", to_commands_iter(test_files), ids=test_files)
-def test_command_state_expand(command_list):
+@pytest.mark.parametrize("file_name", test_files)
+def test_command_state_expand(file_name):
+    command_list = file_to_commands(file_name)
     df = pandas.DataFrame(
         (x.to_record() for x in command_list),
     )

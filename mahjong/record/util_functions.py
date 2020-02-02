@@ -42,11 +42,12 @@ def _event_df_iter(events: Iterable[ET.Element], abstract=True):
             result["<tag_extra>"] = matched.group(2)
         else:
             tag = event.tag
+        result["<tag>"] = tag
         if matched and abstract:
             pass
         else:
             result.update(event.attrib)
-            for k, v in event.items():
+            for k, v in result.items():
                 yield {"index": i, "tag": tag, "attr": k, "value": v}
 
 

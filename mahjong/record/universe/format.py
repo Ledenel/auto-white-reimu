@@ -131,15 +131,15 @@ class PlayerView(View, Flag):
     score = auto()
     bonus_tiles = auto()
     round = auto()
+    disconnected = auto()
 
     type__str = name | level | extra_level
     type__index = round
-    type__bool = in_richii
+    type__bool = in_richii | disconnected
     type__score = score
     type__tiles = hand | discard_tiles | meld_public_tiles | bonus_tiles
     type__melds = fixed_meld
     type__list = discard_from_hand
-
 
 # public_tiles =
 # GameView.dora_indicators |
@@ -192,6 +192,7 @@ class EventType(Flag):
     open_hand = auto()
     new_dora = auto()
     richii = auto()
+    connect_change = auto()
     game_finish = auto()
 
 
