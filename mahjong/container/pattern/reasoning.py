@@ -1,6 +1,8 @@
 import logging
+import operator
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
+from functools import reduce
 from itertools import count, product, chain, groupby
 from typing import List
 
@@ -158,13 +160,29 @@ class HeuristicPatternMatchWaiting(Waiting):
     def waiting_and_useful_tiles(self, hand, ignore_4counts=True):
         logging.debug("finding waiting step")
         self_waiting = self.before_waiting_step(hand)
+        result_iter = self.count_hand_borrow_combinition_iter(hand, ignore_4counts, self_waiting)
+
+        return self_waiting, set(tile for _, _, borrows in result_iter for tile in borrows)
+
+    def batch_waiting_and_useful_tiles(self, hand, ignore_4counts=True):
+        waiting_step = self.before_waiting_step(hand)
+        result_iter = self.count_hand_borrow_combinition_iter(hand, ignore_4counts, waiting_step)
+        all_hand_cnt = defaultdict(set)
+        for _, sub_win, borrows in result_iter:
+            hand_win = reduce(operator.add, TileSet(), sub_win)
+            can_drops = hand - hand_win
+            for can_pick_tile in can_drops:
+                all_hand_cnt[can_pick_tile].update(borrows)
+        for tile, hand_useful in all_hand_cnt.items():
+            yield tile, waiting_step, hand_useful
+
+    def count_hand_borrow_combinition_iter(self, hand, ignore_4counts, self_waiting):
         borrows = self.init_search_by_hand(hand)
         self.max_used_tiles = self_waiting + 1
         logging.debug("finding useful tiles")
         result_iter = self._win_selections_in_tiles(hand, ignore_4counts, self.win_pattern, borrowed_limit(hand),
                                                     borrows, 0, 0)
-
-        return self_waiting, set(tile for _, _, borrows in result_iter for tile in borrows)
+        return result_iter
 
     def _win_selections_in_tiles(self, hand: TileSet, ignore_4counts, current_state: WinPattern,
                                  borrow_limits: TileSet, searching_group: List[List[Tile]], borrowed_stage,
