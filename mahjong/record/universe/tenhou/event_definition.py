@@ -3,6 +3,7 @@ from typing import Union, Iterable
 
 from loguru import logger
 
+from mahjong.record.const import initial_tiles
 from mahjong.record.category import SubCategory
 from mahjong.record.player import TenhouPlayer
 from mahjong.record.reader import TenhouGame
@@ -174,7 +175,7 @@ def game_type_command(event: TenhouEvent, ctx):
         yield cmd(prop=RecordView.allow_tanyao_open, value=game_type.allow_tanyao_open())
         yield cmd(prop=RecordView.speed_up, value=game_type.speed_up())
         yield cmd(prop=RecordView.player_count, value=game_type.player_count())
-
+        yield cmd(prop=RecordView.using_tiles, value=initial_tiles(game_type.player_count(), game_type.has_aka_dora()))
 
 @tenhou_command.match_name("TAIKYOKU")
 @default_event_type(EventType.game_init)
