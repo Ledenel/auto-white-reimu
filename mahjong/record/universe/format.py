@@ -100,11 +100,12 @@ class RecordView(View, Flag):
     play_wind_count = auto()
     show_discard_shadow = auto()
     seed = auto()
+    using_tiles = auto()
 
     type__index = player_count | play_wind_count
     type__str = play_level | seed
     type__bool = has_aka_dora | speed_up | allow_tanyao_open | show_discard_shadow
-
+    type__list = using_tiles
 
 class GameView(View, Flag):
     wind = auto()
