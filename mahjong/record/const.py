@@ -32,4 +32,4 @@ def initial_tiles(player_num, has_aka):
         akas = akas - Counter(["0m"])
     if has_aka:
         initials = initials - Counter(["5m", "5s", "5p"]) + akas
-    return list(initials)
+    return list(initials.elements())
