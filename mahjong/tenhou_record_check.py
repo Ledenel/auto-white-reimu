@@ -230,10 +230,7 @@ def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, 
     reasoning_names = ["normal_reasonings", "seven_pair_reasonings"]
     if meld_count == 0:
         win_types.append(UniquePairs())
-    win_reasonings = [
-        list(reasoning_discards(hand, invisible_player_perspective, tile, win) for tile in hand)
-        for win in win_types
-    ]
+    win_reasonings = all_win_type_reasoning(hand, invisible_player_perspective, win_types)
     merged_win_reasonings = [
         reasoning_merge(list(reasoning_same_discard), invisible_player_perspective)
         for reasoning_same_discard in zip(*win_reasonings)
@@ -287,10 +284,23 @@ def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, 
     return round_reasoning
 
 
+def all_win_type_reasoning(hand, invisible_player_perspective, win_types):
+    for win in win_types:
+        yield list(one_win_reasoning(hand, invisible_player_perspective, win))
+
+
+def one_win_reasoning(hand, invisible_player_perspective, win):
+    return (reasoning_discards(hand, invisible_player_perspective, tile, win) for tile in hand)
+
+
 def reasoning_discards(hand, invisible_player_perspective, tile, win):
     hand_temp = hand - TileSet([tile])
     reasoning = HeuristicPatternMatchWaiting(win)
     waiting_step, useful_tiles = reasoning.waiting_and_useful_tiles(hand_temp)
+    return convert_to_reasoning(invisible_player_perspective, tile, useful_tiles, waiting_step)
+
+
+def convert_to_reasoning(invisible_player_perspective, tile, useful_tiles, waiting_step):
     useful_tiles_count = sum(len(set(tile_to_tenhou_range(tile)) & invisible_player_perspective)
                              for tile in useful_tiles)
     return ReasoningItem(tile, waiting_step, useful_tiles, useful_tiles_count)
