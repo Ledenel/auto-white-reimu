@@ -63,6 +63,13 @@
         .description-table {
             display: inline-table;
         }
+
+        .blackbox {
+            border-color: black;
+            border-width: medium;
+            border-style: dashed;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -80,9 +87,10 @@
     {% for reasoning in selected %}
         <div class="reasoning-tile">
             <div>Discard&nbsp;{{ tile(reasoning.discard_tile, 'small') }}
-                {{ reasoning.waiting_step }}
-                Steps
-                {{ reasoning.useful_tiles_count }} Tiles
+                <div class="blackbox">
+                    Steps {{ reasoning.waiting_step }}
+                    Tiles {{ reasoning.useful_tiles_count }}
+                </div>
             </div>
             <div>Expect {{ tile(reasoning.useful_tiles, 'small') }}
             </div>
@@ -143,12 +151,12 @@
                                         <tr>
                                             <td>Expected</td>
                                             <td>Steps {{ round.expected_reasonings[0].waiting_step }}
-                                        Tiles {{ round.expected_reasonings[0].useful_tiles_count }}</td>
+                                                Tiles {{ round.expected_reasonings[0].useful_tiles_count }}</td>
                                         </tr>
                                         <tr>
                                             <td>Actual</td>
                                             <td>Steps {{ round.your_choice_reasoning.waiting_step }}
-                                        Tiles {{ round.your_choice_reasoning.useful_tiles_count }}</td>
+                                                Tiles {{ round.your_choice_reasoning.useful_tiles_count }}</td>
                                         </tr>
                                     </table>
                                 </summary>
