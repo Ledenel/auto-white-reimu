@@ -81,8 +81,6 @@ def test_heuristic_useful_tiles(hand, useful):
 
 record_regex = re.compile("打([a-z0-9]+) 摸\\[([a-z0-9]+) [0-9]+枚\\]")
 
-
-
 recs = ["""
 589m1156p3089s15z1p
 打5m 摸[7m8m9m4p5p6p7p3s4s5s7s8s9s1z5z 50枚]
@@ -97,20 +95,24 @@ recs = ["""
 打5p 摸[5m7m6p4s7s1z5z 24枚]
 打6p 摸[5m7m5p4s7s1z5z 24枚]
 打1p 摸[7m4p7p4s7s 20枚]
-""",]
+""", ]
 
 
 def record_convert(s):
     lines = [x for x in s.split("\n") if x.strip() != ""]
-    first,rest = lines[0], lines[1:]
+    first, rest = lines[0], lines[1:]
     dic = {}
     for line in rest:
         matched = record_regex.match(line)
-        dic[list(tiles_from_string(matched.group(1)))[0]] = TileSet(matched.group(2))
+        dic[list(tiles_from_string(matched.group(1)))[0]] = tile_set_from_string(matched.group(2))
     return tile_set_from_string(first), dic
+
 
 record_converted = [record_convert(s) for s in recs]
 
-@pytest.mark.parametrize("hand_rec", record_converted, ids=lambda t:t[0])
+
+@pytest.mark.parametrize("hand_rec", record_converted, ids=lambda t: str(t[0]))
 def test_batch_convert(hand_rec):
     hand, record_map = hand_rec
+    for tile, step, useful in HeuristicPatternMatchWaiting(NormalTypeWin()).batch_waiting_and_useful_tiles(hand):
+        assert record_map[tile] == TileSet(useful)

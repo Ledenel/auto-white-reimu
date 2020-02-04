@@ -169,7 +169,7 @@ class HeuristicPatternMatchWaiting(Waiting):
         result_iter = self.count_hand_borrow_combinition_iter(hand, ignore_4counts, waiting_step)
         all_hand_cnt = defaultdict(set)
         for _, sub_win, borrows in result_iter:
-            hand_win = reduce(operator.add, TileSet(), sub_win)
+            hand_win = reduce(operator.add, sub_win, TileSet())
             can_drops = hand - hand_win
             for can_pick_tile in can_drops:
                 all_hand_cnt[can_pick_tile].update(borrows)
