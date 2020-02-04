@@ -239,8 +239,13 @@ def discard_reasoning(discard_event, hand_state, invisible_tiles_state, player, 
     _, expected_reasonings = next(groupby(merged_win_reasonings, key=reasoning_key))
     expected_reasonings = list(expected_reasonings)
     your_choice_tile = tile_from_tenhou(player.discard_tile_index(discard_event))
-    your_choice_reasoning = find_in_list(merged_win_reasonings,
-                                         key=lambda x: x.discard_tile == your_choice_tile)
+    your_choice_reasoning = reasoning_merge(
+        [reasoning_discards(hand, invisible_player_perspective, your_choice_tile, win)
+         for win in win_types
+         ], invisible_player_perspective
+    )
+    # find_in_list(merged_win_reasonings,
+    #                                  key=lambda x: x.discard_tile == your_choice_tile)
     for win_reasoning in win_reasonings:
         win_reasoning.sort(key=reasoning_key)
     # TODO add wrong rate for reason display.
@@ -290,7 +295,13 @@ def all_win_type_reasoning(hand, invisible_player_perspective, win_types):
 
 
 def one_win_reasoning(hand, invisible_player_perspective, win):
-    return (reasoning_discards(hand, invisible_player_perspective, tile, win) for tile in hand)
+    reasoning = HeuristicPatternMatchWaiting(win)
+    # analysed_tiles = set()
+    for tile, step, useful in reasoning.batch_waiting_and_useful_tiles(hand):
+        # analysed_tiles.add(tile)
+        yield convert_to_reasoning(invisible_player_perspective, tile, useful, step)
+
+    # return (reasoning_discards(hand, invisible_player_perspective, tile, win) for tile in hand)
 
 
 def reasoning_discards(hand, invisible_player_perspective, tile, win):
