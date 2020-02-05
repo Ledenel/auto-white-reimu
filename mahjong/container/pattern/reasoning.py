@@ -186,7 +186,7 @@ class HeuristicPatternMatchWaiting(Waiting):
 
     def _win_selections_in_tiles(self, hand: TileSet, ignore_4counts, current_state: WinPattern,
                                  borrow_limits: TileSet, searching_group: List[List[Tile]], borrowed_stage,
-                                 waiting_step_pruning):
+                                 waiting_step_pruning, auto_update_max_used_tiles=True):
         # if borrowed_tile_count(hand) > self.max_used_tiles:
         #     return
         if ignore_4counts and not all(cnt >= borrow_limits[tile] for tile, cnt in hand.items()):
@@ -194,7 +194,8 @@ class HeuristicPatternMatchWaiting(Waiting):
         if current_state.has_win():
             borrowed = TileSet(-hand)
             borrowed_count = sum(borrowed.values())
-            self.max_used_tiles = borrowed_count - waiting_step_pruning
+            if auto_update_max_used_tiles:
+                self.max_used_tiles = borrowed_count - waiting_step_pruning
             logging.debug("found borrowing %s", borrowed)
             yield borrowed_count, [], borrowed
             return
